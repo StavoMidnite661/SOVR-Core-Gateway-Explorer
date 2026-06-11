@@ -1,0 +1,6 @@
+{
+  "name": "SOVR Core Gateway Explorer",
+  "description": "Real-time administrative client, transaction ledger, cryptographic block verifier, and system status visualizer for the SOVR Core Financial Network.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
