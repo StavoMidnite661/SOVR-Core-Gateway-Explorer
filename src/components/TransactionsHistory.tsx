@@ -213,7 +213,7 @@ export default function TransactionsHistory({ transactions }: TransactionsHistor
             <option value="all">All Paths</option>
             <option value="instant">Real-Time (Instant)</option>
             <option value="batch">End-Of-Day (Batch)</option>
-            <option value="mint">Sovereign MInt</option>
+            <option value="mint">SOVR MInt</option>
           </select>
         </div>
       </div>
@@ -225,8 +225,8 @@ export default function TransactionsHistory({ transactions }: TransactionsHistor
             const isExpanded = selectedTxnId === txn.id;
             
             // Extract Debit / Credit codes for forensics
-            const debitCode = txn.entries.find(e => e.debitMinor > 0)?.accountCode || 'Sovereign Clearing';
-            const creditCode = txn.entries.find(e => e.creditMinor > 0)?.accountCode || 'Sovereign Clearing';
+            const debitCode = txn.entries.find(e => e.debitMinor > 0)?.accountCode || 'SOVR Clearing';
+            const creditCode = txn.entries.find(e => e.creditMinor > 0)?.accountCode || 'SOVR Clearing';
             const deterministicNode = `Validator Node #0${(txn.hash.charCodeAt(4) % 6) + 1}`;
             const sealId = `SEAL_BLOCK_#${(txn.hash.charCodeAt(1) % 400) + 9422}`;
 

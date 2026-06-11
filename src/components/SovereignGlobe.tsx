@@ -35,7 +35,7 @@ interface Route {
   consensus: string;
 }
 
-interface SovereignGlobeProps {
+interface SOVRGlobeProps {
   geoNodes: GeoNode[];
   routes: Route[];
   selectedNodeId: string | null;
@@ -146,10 +146,22 @@ export default function SovereignGlobe({
   onSelectNode,
   onSelectRoute,
   heatmapOn
-}: SovereignGlobeProps) {
+}: SOVRGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const labelsContainerRef = useRef<HTMLDivElement>(null);
+
+  const lastSelectedNodeIdRef = useRef<string | null>(null);
+  const triggerShockwaveRef = useRef<((nodeId: string) => void) | null>(null);
+
+  useEffect(() => {
+    if (selectedNodeId && selectedNodeId !== lastSelectedNodeIdRef.current) {
+      if (triggerShockwaveRef.current) {
+        triggerShockwaveRef.current(selectedNodeId);
+      }
+    }
+    lastSelectedNodeIdRef.current = selectedNodeId;
+  }, [selectedNodeId]);
 
   // Store coordinates projection data for 2D Labels in rendering loop
   const nodeScreenPositions = useMemo(() => {
@@ -387,6 +399,114 @@ export default function SovereignGlobe({
       nodeMeshes.push(nodeGroup);
     });
 
+    // --- QUANTUM ENTANGLEMENT SYNC ENGINE: SATELLITES & SHOCKWAVES ---
+    const activeShockwaves: { mesh: THREE.Mesh; progress: number; origin: THREE.Vector3; triggeredNodes: Set<string> }[] = [];
+    const activeLasers: { line: THREE.Line; maxAge: number; age: number }[] = [];
+    interface Satellite {
+      group: THREE.Group;
+      mesh: THREE.Mesh;
+      orbitRadiusX: number;
+      orbitRadiusY: number;
+      speed: number;
+      angle: number;
+      inclinationX: number;
+      inclinationZ: number;
+      color: number;
+    }
+    const satellites: Satellite[] = [];
+
+    // Initialize 3 satellites in elliptical orbits
+    const numSatellites = 3;
+    const satColors = [0x00f2ff, 0xf59e0b, 0x10b981]; // Cyan, Amber, Emerald
+    for (let sSec = 0; sSec < numSatellites; sSec++) {
+      const rx = GLOBE_RADIUS + 0.32 + sSec * 0.12;
+      const ry = GLOBE_RADIUS + 0.28 + sSec * 0.12;
+      const incX = (0.2 + sSec * 0.3) * Math.PI;
+      const incZ = (0.15 + sSec * 0.25) * Math.PI;
+
+      // Draw orbit path line
+      const orbitPoints: THREE.Vector3[] = [];
+      for (let i = 0; i <= 64; i++) {
+        const theta = (i / 64) * 2 * Math.PI;
+        const pt = new THREE.Vector3(rx * Math.cos(theta), 0, ry * Math.sin(theta));
+        pt.applyAxisAngle(new THREE.Vector3(1, 0, 0), incX);
+        pt.applyAxisAngle(new THREE.Vector3(0, 0, 1), incZ);
+        orbitPoints.push(pt);
+      }
+      const orbitGeom = new THREE.BufferGeometry().setFromPoints(orbitPoints);
+      const orbitMat = new THREE.LineBasicMaterial({
+        color: satColors[sSec],
+        transparent: true,
+        opacity: 0.12
+      });
+      const orbitLine = new THREE.Line(orbitGeom, orbitMat);
+      globeGroup.add(orbitLine);
+
+      // Satellite Group
+      const satGroup = new THREE.Group();
+      
+      const satGeom = new THREE.OctahedronGeometry(0.024, 0);
+      const satMat = new THREE.MeshBasicMaterial({
+        color: satColors[sSec],
+        wireframe: false
+      });
+      const satMesh = new THREE.Mesh(satGeom, satMat);
+      satGroup.add(satMesh);
+
+      // Ring overlay
+      const auraGeom = new THREE.RingGeometry(0.035, 0.04, 16);
+      const auraMat = new THREE.MeshBasicMaterial({
+        color: satColors[sSec],
+        transparent: true,
+        opacity: 0.55,
+        side: THREE.DoubleSide
+      });
+      const auraMesh = new THREE.Mesh(auraGeom, auraMat);
+      satGroup.add(auraMesh);
+
+      globeGroup.add(satGroup);
+      satellites.push({
+        group: satGroup,
+        mesh: satMesh,
+        orbitRadiusX: rx,
+        orbitRadiusY: ry,
+        speed: 0.12 + sSec * 0.04,
+        angle: Math.random() * Math.PI * 2,
+        inclinationX: incX,
+        inclinationZ: incZ,
+        color: satColors[sSec]
+      });
+    }
+
+    // React shockwave trigger handler subscription
+    triggerShockwaveRef.current = (nodeId: string) => {
+      const node = geoNodes.find(n => n.id === nodeId);
+      if (!node) return;
+      const originVec = latLngToVector3(node.lat, node.lon, GLOBE_RADIUS);
+
+      const ringRadius = 0.01;
+      const shockwaveGeom = new THREE.RingGeometry(ringRadius * 0.85, ringRadius * 1.15, 32);
+      const shockwaveMat = new THREE.MeshBasicMaterial({
+        color: 0xf97316, // Beautiful warm orange/neon color
+        transparent: true,
+        opacity: 1.0,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const shockwaveMesh = new THREE.Mesh(shockwaveGeom, shockwaveMat);
+      shockwaveMesh.position.copy(originVec).multiplyScalar(1.006);
+      shockwaveMesh.lookAt(new THREE.Vector3(0, 0, 0));
+
+      globeGroup.add(shockwaveMesh);
+
+      activeShockwaves.push({
+        mesh: shockwaveMesh,
+        progress: 0,
+        origin: originVec,
+        triggeredNodes: new Set<string>()
+      });
+    };
+
     // Create 3D GREAT-CIRCLE Spline Routes & Packet Animation systems
     const curves: THREE.QuadraticBezierCurve3[] = [];
     const packetMeshes: { mesh: THREE.Mesh; curve: THREE.QuadraticBezierCurve3; color: string; speed: number; offset: number }[] = [];
@@ -592,6 +712,123 @@ export default function SovereignGlobe({
         p.mesh.visible = distToCam < centerToCam - 0.1;
       });
 
+      // 1. Update Satellites Positions & Random Vector Signing Laser emissions
+      satellites.forEach(sat => {
+        sat.angle += (sat.speed * 0.012);
+        const pt = new THREE.Vector3(
+          sat.orbitRadiusX * Math.cos(sat.angle),
+          0,
+          sat.orbitRadiusY * Math.sin(sat.angle)
+        );
+        pt.applyAxisAngle(new THREE.Vector3(1, 0, 0), sat.inclinationX);
+        pt.applyAxisAngle(new THREE.Vector3(0, 0, 1), sat.inclinationZ);
+        sat.group.position.copy(pt);
+
+        sat.mesh.rotation.x += 0.02;
+        sat.mesh.rotation.y += 0.03;
+
+        // Dispatch laser validation witness vectors to geosites occasionally (Satellite Witness signing)
+        if (Math.random() < 0.005) {
+          const targetNode = geoNodes[Math.floor(Math.random() * geoNodes.length)];
+          if (targetNode) {
+            const nodeVec = latLngToVector3(targetNode.lat, targetNode.lon, GLOBE_RADIUS);
+            
+            const laserPoints = [sat.group.position.clone(), nodeVec];
+            const laserGeom = new THREE.BufferGeometry().setFromPoints(laserPoints);
+            const laserMat = new THREE.LineBasicMaterial({
+              color: sat.color,
+              transparent: true,
+              opacity: 1.0,
+              linewidth: 1.5
+            });
+            const laserLine = new THREE.Line(laserGeom, laserMat);
+            globeGroup.add(laserLine);
+
+            const matchedIndex = geoNodes.findIndex(n => n.id === targetNode.id);
+            if (matchedIndex !== -1 && nodeMeshes[matchedIndex]) {
+              nodeMeshes[matchedIndex].scale.set(2.2, 2.2, 2.2);
+            }
+
+            activeLasers.push({
+              line: laserLine,
+              maxAge: 20,
+              age: 0
+            });
+          }
+        }
+      });
+
+      // 2. Maintain & Fade Laser validation sign vectors
+      for (let i = activeLasers.length - 1; i >= 0; i--) {
+        const l = activeLasers[i];
+        l.age += 1;
+        if (l.age >= l.maxAge) {
+          globeGroup.remove(l.line);
+          l.line.geometry.dispose();
+          (l.line.material as THREE.Material).dispose();
+          activeLasers.splice(i, 1);
+        } else {
+          (l.line.material as THREE.LineBasicMaterial).opacity = 1.0 - (l.age / l.maxAge);
+        }
+      }
+
+      // 3. Update & Expand Quantum Surface Shockwaves
+      for (let i = activeShockwaves.length - 1; i >= 0; i--) {
+        const sw = activeShockwaves[i];
+        sw.progress += 0.015;
+        if (sw.progress > 1.0) {
+          globeGroup.remove(sw.mesh);
+          sw.mesh.geometry.dispose();
+          (sw.mesh.material as THREE.Material).dispose();
+          activeShockwaves.splice(i, 1);
+        } else {
+          const scl = 1 + sw.progress * 45;
+          sw.mesh.scale.set(scl, scl, 1);
+          (sw.mesh.material as THREE.Material).opacity = 1.0 - sw.progress;
+
+          // Check inter-node intersection triggers
+          const ringRad = 0.01;
+          const currentRadius = scl * ringRad;
+
+          geoNodes.forEach((node, nodeIdx) => {
+            if (node.id === selectedNodeId) return; // ignore origin
+            if (sw.triggeredNodes.has(node.id)) return;
+
+            const otherVec = latLngToVector3(node.lat, node.lon, GLOBE_RADIUS);
+            const dist = sw.origin.distanceTo(otherVec);
+
+            if (currentRadius >= dist) {
+              sw.triggeredNodes.add(node.id);
+              const nodeMesh = nodeMeshes[nodeIdx];
+              if (nodeMesh) {
+                nodeMesh.scale.set(3.0, 3.0, 3.0);
+                
+                // Add a visual flash class temporarily to node label
+                const flashDiv = document.getElementById(`globe-label-${node.id}`);
+                if (flashDiv) {
+                  flashDiv.classList.add('node-quantum-flash');
+                  setTimeout(() => {
+                    flashDiv.classList.remove('node-quantum-flash');
+                  }, 650);
+                }
+              }
+            }
+          });
+        }
+      }
+
+      // 4. Decay scaled-up geonode meshes smoothly
+      nodeMeshes.forEach(mesh => {
+        if (mesh.scale.x > 1.0) {
+          mesh.scale.x -= 0.08;
+          mesh.scale.y -= 0.08;
+          mesh.scale.z -= 0.08;
+          if (mesh.scale.x < 1.0) {
+            mesh.scale.set(1, 1, 1);
+          }
+        }
+      });
+
       // Position DOM Label overlays dynamically matching projected 3D nodes
       nodeScreenPositions.forEach(node => {
         const el = document.getElementById(`globe-label-${node.id}`);
@@ -649,6 +886,23 @@ export default function SovereignGlobe({
       canvas.removeEventListener('touchmove', handleTouchMove);
       canvas.removeEventListener('touchend', handleMouseUpOrLeave);
 
+      // Safely dispose active shockwaves, lasers and satellites
+      activeShockwaves.forEach(sw => {
+        globeGroup.remove(sw.mesh);
+        sw.mesh.geometry.dispose();
+        (sw.mesh.material as THREE.Material).dispose();
+      });
+      activeLasers.forEach(laser => {
+        globeGroup.remove(laser.line);
+        laser.line.geometry.dispose();
+        (laser.line.material as THREE.Material).dispose();
+      });
+      satellites.forEach(sat => {
+        globeGroup.remove(sat.group);
+        sat.mesh.geometry.dispose();
+        (sat.mesh.material as THREE.Material).dispose();
+      });
+
       // Safely dispose ThreeJS memory geometries and textures
       sphereGeom.dispose();
       sphereMat.dispose();
@@ -664,7 +918,7 @@ export default function SovereignGlobe({
     <div 
       ref={containerRef} 
       className="absolute inset-0 w-full h-full cursor-grab active:cursor-grabbing select-none"
-      id="SovereignGlobe_ThreeJS_Container"
+      id="SOVRGlobe_ThreeJS_Container"
     >
       {/* 3D WebGL Canvas Layer */}
       <canvas ref={canvasRef} className="block w-full h-full pointer-events-auto" />
@@ -673,7 +927,7 @@ export default function SovereignGlobe({
       <div 
         ref={labelsContainerRef} 
         className="absolute inset-0 pointer-events-none overflow-hidden"
-        id="SovereignGlobe_Labels_Container"
+        id="SOVRGlobe_Labels_Container"
       >
         {nodeScreenPositions.map(node => {
           const isSelected = selectedNodeId === node.id;

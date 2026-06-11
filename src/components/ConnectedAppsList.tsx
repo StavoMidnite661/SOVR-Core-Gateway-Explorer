@@ -53,11 +53,11 @@ export default function ConnectedAppsList({ apps, isPaused }: ConnectedAppsListP
         };
       case 'rork-sovr-bridge':
         return {
-          description: 'Cross-chain settlement oracle connecting secure peripheral sovereign currencies.',
+          description: 'Cross-chain settlement oracle connecting secure peripheral SOVR currencies.',
           endpoint: 'bridge-core.sovr.net/api/v3',
-          auth: 'Sovereign Proof Signature',
+          auth: 'SOVR Proof Signature',
           version: '1.9.0',
-          recentEvents: ['Secured Collateral Checked', 'Sovereign MInt Triggered', 'Gas Pool Rebalanced'],
+          recentEvents: ['Secured Collateral Checked', 'SOVR MInt Triggered', 'Gas Pool Rebalanced'],
           errorHistory: ['08:21:40 - Router updated', '19:10:05 - Authority seal signed'],
           healthLogs: ['Validator agreement: 100%', 'Consensus consensus authority #3 authenticated'],
         };
@@ -85,7 +85,7 @@ export default function ConnectedAppsList({ apps, isPaused }: ConnectedAppsListP
         return {
           description: 'Automatic compliance machine generating automated block seals and regulatory witness reports.',
           endpoint: 'audit.witness.sovr:9000/report',
-          auth: 'Sovereign Proof Signature',
+          auth: 'SOVR Proof Signature',
           version: '1.0.4',
           recentEvents: ['Witness Verified', 'Seal Proof Attested', 'Compliance Logs Filed'],
           errorHistory: ['No logged faults inside current epoch'],
@@ -93,7 +93,7 @@ export default function ConnectedAppsList({ apps, isPaused }: ConnectedAppsListP
         };
       case 'treasury-ops':
         return {
-          description: 'Internal treasury Operations managing sovereign asset liquidity pool ratios.',
+          description: 'Internal treasury Operations managing SOVR asset liquidity pool ratios.',
           endpoint: 'ops.treasury-sovr.internal/v2',
           auth: 'Mutual TLS Certificates',
           version: '3.1.0',

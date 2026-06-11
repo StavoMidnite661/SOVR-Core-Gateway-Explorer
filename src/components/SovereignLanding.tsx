@@ -19,7 +19,7 @@ import {
   Briefcase
 } from 'lucide-react';
 
-interface SovereignLandingProps {
+interface SOVRLandingProps {
   onEnter: () => void;
   totalAssetsUSD: number;
   totalSVT: number;
@@ -112,7 +112,7 @@ class AudioSynthService {
 
 const synth = new AudioSynthService();
 
-export default function SovereignLanding({ onEnter, totalAssetsUSD, totalSVT }: SovereignLandingProps) {
+export default function SovereignLanding({ onEnter, totalAssetsUSD, totalSVT }: SOVRLandingProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [glitchText, setGlitchText] = useState('SOVR_CORE');
   const [activeDoc, setActiveDoc] = useState<string | null>(null);
@@ -580,7 +580,7 @@ export default function SovereignLanding({ onEnter, totalAssetsUSD, totalSVT }: 
                 onClick={() => { synth.playHover(); setActiveDoc('trust'); }} 
                 className="text-left text-zinc-400 hover:text-white hover:underline transition-all flex items-center gap-1.5 group cursor-pointer"
               >
-                <span>Sovereign Trust Agreement</span>
+                <span>SOVR Trust Agreement</span>
                 <span className="text-[9px] text-orange-500 opacity-0 group-hover:opacity-100 transition-opacity">→</span>
               </button>
               <button 
@@ -692,7 +692,7 @@ export default function SovereignLanding({ onEnter, totalAssetsUSD, totalSVT }: 
                 <div className="flex items-center gap-2">
                   <FileText className="w-4 h-4 text-[#00f2ff]" />
                   <span className="font-sans font-bold text-sm text-white uppercase tracking-tight">
-                    {activeDoc === 'trust' && 'SOVEREIGN TRUST AGREEMENT'}
+                    {activeDoc === 'trust' && 'SOVR TRUST AGREEMENT'}
                     {activeDoc === 'terms' && 'TERMS OF SERVICE // SOVR EMPIRE'}
                     {activeDoc === 'privacy' && 'ZKP PRIVACY & DATA INTEGRITY'}
                     {activeDoc === 'compliance' && 'REGULATORY DISCLOSURES'}
@@ -725,7 +725,7 @@ export default function SovereignLanding({ onEnter, totalAssetsUSD, totalSVT }: 
 
                     <h4 className="text-white uppercase font-bold text-xs">Section 2. Digital Assets & Tokenization</h4>
                     <p>
-                      The Sovereign Supply Pool (administered under native denominational ticker SVT) represents cryptographic units of participation. No unit shall be generated outside of the verified consensual Quorum agreement. All values are balanced to algebraic correctness continuously.
+                      The SOVR Supply Pool (administered under native denominational ticker SVT) represents cryptographic units of participation. No unit shall be generated outside of the verified consensual Quorum agreement. All values are balanced to algebraic correctness continuously.
                     </p>
 
                     <h4 className="text-white uppercase font-bold text-xs">Section 3. Fiduciary Autonomic Sealing</h4>
@@ -751,7 +751,7 @@ export default function SovereignLanding({ onEnter, totalAssetsUSD, totalSVT }: 
 
                     <h4 className="text-white uppercase font-bold text-xs">2. Factional Reserve Prohibition</h4>
                     <p>
-                      The system maintains a full dollar-for-dollar collateral pool. At no time does the interface support fractional liability expansion. Invariant rule audits are computed live on every keystroke, matching assets directly inside the Sovereign Balance Sheets.
+                      The system maintains a full dollar-for-dollar collateral pool. At no time does the interface support fractional liability expansion. Invariant rule audits are computed live on every keystroke, matching assets directly inside the SOVR Balance Sheets.
                     </p>
 
                     <h4 className="text-white uppercase font-bold text-xs">3. Use of Interactive Portals</h4>

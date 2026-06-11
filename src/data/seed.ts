@@ -61,7 +61,7 @@ export const INITIAL_ACCOUNTS: LedgerAccount[] = [
   {
     id: "acc_equity",
     code: "3000.EQUITY",
-    name: "Sovereign Equity",
+    name: "SOVR Equity",
     kind: "equity",
     denomination: "USD",
     balanceMinor: 1850000000

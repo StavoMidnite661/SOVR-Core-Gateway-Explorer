@@ -114,7 +114,7 @@ export default function App() {
 
   // Simulated notification center logs
   const [notifications, setNotifications] = useState<any[]>([
-    { id: 1, type: 'API', message: 'Inbound TLS port connection handshaking initialized with SovereignPay Swedish ingress', time: '1 min ago', status: 'info' },
+    { id: 1, type: 'API', message: 'Inbound TLS port connection handshaking initialized with SOVRPay Swedish ingress', time: '1 min ago', status: 'info' },
     { id: 2, type: 'TREASURY', message: 'Large collateral fund transfer of +120,000 SVT completed and matched algebraically', time: '4 mins ago', status: 'warning' },
     { id: 3, type: 'SYSTEM', message: 'Consensus quorum signed authority seal for ledger height #1428 matches Merkle root', time: '12 mins ago', status: 'success' },
     { id: 4, type: 'SECURITY', message: 'Scheduled algorithmic invariant check passed across all 6 validator instances', time: '35 mins ago', status: 'success' },
@@ -406,8 +406,8 @@ export default function App() {
         if (randomCat === 'API') {
           const apiActions = [
             'Client credential handshake resolved with Basalt Console Node #1',
-            'Sovereign UnifiedPay Hub webhook ingestion queue lag detected: 42ms',
-            'Sovereign API channel heartbeats successfully acknowledged from all 6 authorities'
+            'SOVR UnifiedPay Hub webhook ingestion queue lag detected: 42ms',
+            'SOVR API channel heartbeats successfully acknowledged from all 6 authorities'
           ];
           msg = apiActions[Math.floor(Math.random() * apiActions.length)];
           status = msg.includes('lag') ? 'warning' : 'success';
@@ -482,13 +482,23 @@ export default function App() {
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="relative min-h-screen grid-overlay bg-[#050507] pb-16 text-[#e0e0e0] font-sans antialiased border-4 border-[#1a1a20]"
+          className="relative min-h-screen grid-overlay bg-[#050507] pb-16 text-[#e0e0e0] font-sans antialiased border-4 border-[#1a1a20] overflow-hidden"
         >
+          {/* Background oversized blueprint map */}
+          <div className="absolute inset-0 z-0 overflow-hidden select-none pointer-events-none opacity-[0.06] mix-blend-screen scale-110">
+            <img 
+              src="/src/assets/images/sovr_background_map_1781167617436.png" 
+              alt="SOVR Terminal Blueprint Map" 
+              className="w-full h-full object-cover select-none pointer-events-none blur-[0.2px]"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+
       {/* Top Ambient Tech Border line */}
-      <div className="h-1 bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-500 animate-pulse w-full shadow-[0_0_8px_#06b6d4]" />
+      <div className="h-1 bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-500 animate-pulse w-full shadow-[0_0_8px_#06b6d4] relative z-10" />
 
       {/* Global Administrative Header */}
-      <header id="site-global-header" className="border-b border-[#2a2a35] bg-[#0c0c12]/95 backdrop-blur-md sticky top-0 z-40 px-4 py-3.5 shadow-sm">
+      <header id="site-global-header" className="border-b border-[#2a2a35]/65 bg-[#0c0c12]/85 backdrop-blur-md sticky top-0 z-40 px-4 py-3.5 shadow-sm">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 relative flex items-center justify-center">
@@ -504,7 +514,7 @@ export default function App() {
                   v3.8.4-stable
                 </span>
               </div>
-              <p className="text-[10px] text-white/50 font-mono uppercase tracking-wider">Cryptographic Ledger Registry & Sovereign Sealer Client</p>
+              <p className="text-[10px] text-white/50 font-mono uppercase tracking-wider">Cryptographic Ledger Registry & SOVR Sealer Client</p>
             </div>
           </div>
 
@@ -617,7 +627,7 @@ export default function App() {
       </header>
 
       {/* Main Core View Area */}
-      <main id="primary-bento-viewport" className="max-w-7xl mx-auto px-4 mt-8 space-y-6">
+      <main id="primary-bento-viewport" className="relative z-10 max-w-7xl mx-auto px-4 mt-8 space-y-6">
         
         {/* NETWORK GLOBAL KPI PANEL */}
         <div id="system-kpi-row" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -642,7 +652,7 @@ export default function App() {
             <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-emerald-500/30" />
           </div>
 
-          {/* Sovereign Treasury SVT Volume representation */}
+          {/* SOVR Treasury SVT Volume representation */}
           <div id="kpi-box-svt" className="bg-[#0c0c12]/90 border border-[#2a2a35] rounded-lg p-4.5 relative overflow-hidden backdrop-blur hover:border-white/10 transition-all">
             <div className="flex items-start justify-between">
               <div>
@@ -652,7 +662,7 @@ export default function App() {
                 </h2>
                 <div className="flex items-center gap-1.5 mt-2">
                   <span className="w-2 h-2 rounded-full bg-amber-500 inline-block shadow-[0_0_8px_#f59e0b]" />
-                  <span className="text-[9px] text-[#e0e0e0] opacity-60 font-mono tracking-tight uppercase">SOVEREIGN NETWORK SUPPLY</span>
+                  <span className="text-[9px] text-[#e0e0e0] opacity-60 font-mono tracking-tight uppercase">SOVR NETWORK SUPPLY</span>
                 </div>
               </div>
               <div className="p-2.5 bg-amber-500/5 rounded border border-amber-500/25 text-amber-400">
@@ -1003,7 +1013,7 @@ export default function App() {
                      <div className="space-y-1.5 border-t border-[#2a2a35]/50 pt-2 text-[8.5px]">
                        <div className="flex justify-between leading-relaxed">
                          <span className="text-white/40">Authority seal:</span>
-                         <span className="text-cyan-300">ECDSA_Sovereign_v2(SHA-256)</span>
+                         <span className="text-cyan-300">ECDSA_SOVR_v2(SHA-256)</span>
                        </div>
                        <div className="flex justify-between">
                          <span className="text-white/40">Validator group:</span>
@@ -1046,7 +1056,7 @@ export default function App() {
                          onClick={() => {
                            const proofTemplate = {
                              merkleRoot: "8c3e21e7f3a2b1662defa0f5e712a42dd094f31cfa754ebfa05f426214227f22",
-                             sealerAuthority: "Sovereign SHA-256 seal nodes",
+                             sealerAuthority: "SOVR SHA-256 seal nodes",
                              algebraicIntegrity: "PROVEN_PASS",
                              timestamp: new Date().toISOString()
                            };
@@ -1116,9 +1126,9 @@ export default function App() {
               <div className="h-2.5 w-2.5 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee] animate-ping" />
               <div>
                 <h1 className="text-sm font-black tracking-widest text-[#ffffff] uppercase font-display">
-                  Sovereign Capital Routing Command Center
+                  SOVR Capital Routing Command Center
                 </h1>
-                <span className="text-[10px] text-white/40 uppercase">Sovereign Financial Network Operating System // Consensus Verified Nominal state</span>
+                <span className="text-[10px] text-white/40 uppercase">SOVR Financial Network Operating System // Consensus Verified Nominal state</span>
               </div>
             </div>
 
@@ -1213,7 +1223,7 @@ export default function App() {
               <div className="bg-[#08080c] border border-[#2a2a35] rounded p-4 space-y-3.5">
                 <span className="text-white/40 uppercase text-[9px] font-bold tracking-widest block border-b border-[#2a2a35]/60 pb-1 flex items-center gap-1">
                   <Database className="w-3.5 h-3.5 text-cyan-400" />
-                  Sovereign Ledger Invariants
+                  SOVR Ledger Invariants
                 </span>
 
                 <div className="grid grid-cols-2 gap-3">

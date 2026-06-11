@@ -66,3 +66,23 @@
   background: #4a4a5a;
 }
 
+/* Quantum trigger neon flarings when shockwave intersects ledger nodes */
+@keyframes nodeQuantumFlash {
+  0% {
+    transform: translate(-50%, -100%) scale(1.0);
+    filter: brightness(1) drop-shadow(0 0 0px rgba(249, 115, 22, 0));
+  }
+  15% {
+    transform: translate(-50%, -100%) scale(1.35);
+    filter: brightness(2.5) drop-shadow(0 0 15px #f97316);
+  }
+  100% {
+    transform: translate(-50%, -100%) scale(1.0);
+    filter: brightness(1) drop-shadow(0 0 0px rgba(249, 115, 22, 0));
+  }
+}
+
+.node-quantum-flash {
+  animation: nodeQuantumFlash 0.65s cubic-bezier(0.16, 1, 0.3, 1) forwards !important;
+}
+

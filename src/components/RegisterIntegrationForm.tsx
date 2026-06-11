@@ -110,7 +110,7 @@ export default function RegisterIntegrationForm({ onRegister }: RegisterIntegrat
             <input
               type="text"
               required
-              placeholder="e.g. SovereignPay Retail"
+              placeholder="e.g. SOVRPay Retail"
               className="w-full bg-[#050507] border border-[#2a2a35] rounded px-3 py-2 text-xs text-white placeholder-white/20 tracking-wide font-mono focus:outline-none focus:border-cyan-500/60 transition-colors"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -182,7 +182,7 @@ export default function RegisterIntegrationForm({ onRegister }: RegisterIntegrat
               <input
                 type="text"
                 required
-                placeholder="https://api.sovereignpay.io/v1/settle"
+                placeholder="https://api.sovrpay.io/v1/settle"
                 className="w-full pl-9 pr-3 py-2 bg-[#050507] border border-[#2a2a35] rounded text-xs text-white placeholder-white/20 tracking-wide font-mono focus:outline-none focus:border-cyan-500/60 transition-colors"
                 value={endpoint}
                 onChange={(e) => setEndpoint(e.target.value)}
@@ -215,7 +215,7 @@ export default function RegisterIntegrationForm({ onRegister }: RegisterIntegrat
             >
               <option value="OAuth2">OAuth2 Client</option>
               <option value="API Key">API Key</option>
-              <option value="Sovereign Signature">SOVR Signature</option>
+              <option value="SOVR Signature">SOVR Signature</option>
               <option value="Mutual TLS">mTLS Cert</option>
             </select>
           </div>

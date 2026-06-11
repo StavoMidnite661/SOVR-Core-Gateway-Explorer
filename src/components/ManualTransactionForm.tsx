@@ -166,7 +166,7 @@ export default function ManualTransactionForm({ accounts, apps, onPostTransactio
               onChange={(e) => setDenom(e.target.value as Denomination)}
             >
               <option value="USD">USD ($)</option>
-              <option value="SVT">SVT (Sovereign)</option>
+              <option value="SVT">SVT (SOVR)</option>
               <option value="USDC">USDC (Coin)</option>
             </select>
           </div>

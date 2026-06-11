@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Transaction } from '../types';
 import SovereignGlobe from './SovereignGlobe';
+import QuantumEntropyOscilloscope from './QuantumEntropyOscilloscope';
 
 interface CommandCenterViewProps {
   onClose: () => void;
@@ -116,7 +117,7 @@ export default function CommandCenterView({
     {
       id: 'ZRH_T',
       name: 'Zurich Treasury',
-      role: 'Sovereign Vault Agent',
+      role: 'SOVR Vault Agent',
       region: 'Central Europe',
       lat: 47.3769,
       lon: 8.5417,
@@ -454,20 +455,30 @@ export default function CommandCenterView({
 
   return (
     <div id="command-center-fullscreen-dashboard" className="fixed inset-0 z-50 bg-[#040406]/98 backdrop-blur-xl overflow-y-auto font-mono text-xs select-none">
+      {/* Background oversized blueprint map */}
+      <div className="absolute inset-0 z-0 overflow-hidden select-none pointer-events-none opacity-[0.06] mix-blend-screen scale-110">
+        <img 
+          src="/src/assets/images/sovr_background_map_1781167617436.png" 
+          alt="SOVR Terminal Blueprint Map" 
+          className="w-full h-full object-cover select-none pointer-events-none blur-[0.2px]"
+          referrerPolicy="no-referrer"
+        />
+      </div>
+
       {/* Top Ambient Tech Border line */}
       <div className="h-1 bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-500 animate-pulse w-full shadow-[0_0_8px_#06b6d4] sticky top-0 z-50" />
       
-      <div className="max-w-7xl mx-auto w-full px-4 py-8 flex flex-col space-y-6">
+      <div className="relative z-10 max-w-7xl mx-auto w-full px-4 py-8 flex flex-col space-y-6">
         {/* Header Bar */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-[#2a2a35] pb-4 gap-4">
         <div className="flex items-center gap-3">
           <div className="h-3 w-3 rounded-full bg-[#02c39a] shadow-[0_0_10px_#02c39a] animate-ping" />
           <div>
             <h1 className="text-sm font-black tracking-widest text-[#ffffff] uppercase font-display flex items-center gap-2">
-              Sovereign Capital Routing Command Center
+              SOVR Capital Routing Command Center
               <span className="text-[8.5px] bg-[#02c39a]/10 border border-[#02c39a]/30 text-[#02c39a] font-mono px-1.5 py-0.5 rounded uppercase font-bold tracking-widest leading-none">v2.0 STATE</span>
             </h1>
-            <span className="text-[10px] text-white/40 uppercase">Sovereign Financial Network Operating System // Continuous Quorum Verified</span>
+            <span className="text-[10px] text-white/40 uppercase">SOVR Financial Network Operating System // Continuous Quorum Verified</span>
           </div>
         </div>
 
@@ -578,7 +589,7 @@ export default function CommandCenterView({
               <div>
                 <span className="text-white/40 uppercase text-[9px] font-bold tracking-widest block border-b border-[#2a2a35]/60 pb-1 flex items-center gap-1.5">
                   <Database className="w-3.5 h-3.5 text-amber-500" />
-                  Sovereign Treasury Supply Allocation Matrix
+                  SOVR Treasury Supply Allocation Matrix
                 </span>
                 <p className="text-[8.5px] text-white/20 mt-1">REAL-TIME LIQUIDITY DISTRIBUTIONS OVER ACTIVE GLOBAL ANCHORS</p>
               </div>
@@ -619,7 +630,7 @@ export default function CommandCenterView({
                   <div>
                     <span className="text-[9px] text-white/40 uppercase tracking-widest block font-bold leading-none">Automated Liquidity Guard Policy</span>
                     <p className="text-[9.5px] mt-2 text-white/60 leading-normal">
-                      The Sovereign core mint rebalances liquidity margins every 60-seconds consensus block sequence. Prevents regional ledger exhaustion and settlement drag.
+                      The SOVR core mint rebalances liquidity margins every 60-seconds consensus block sequence. Prevents regional ledger exhaustion and settlement drag.
                     </p>
                   </div>
                   <div className="p-2 bg-[#0c0c12] border border-[#2a2a35]/60 rounded text-[9px] flex items-center justify-between text-amber-400 font-bold">
@@ -832,7 +843,7 @@ export default function CommandCenterView({
                 <div className="p-2 bg-[#050507] border border-[#2a2a35]/60 rounded-sm text-[9.5px] grid grid-cols-2 gap-4">
                   <div className="flex justify-between">
                     <span className="text-white/30 uppercase font-bold">Authority Signature:</span>
-                    <span className="text-cyan-400 font-bold font-mono">ECDSA_Sovereign_v2</span>
+                    <span className="text-cyan-400 font-bold font-mono">ECDSA_SOVR_v2</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-white/30 uppercase font-bold">State validation:</span>
@@ -914,7 +925,7 @@ export default function CommandCenterView({
             </div>
 
             {/* If a route is clicked, display Route Telemetry Drawer popup widget */}
-            {selectedRoute ? (
+            {selectedRoute && (
               <div className="bg-[#0c0c12]/90 border border-amber-500/30 p-2.5 rounded-sm text-[9.5px] space-y-1.5 animate-fadeIn">
                 <div className="flex justify-between items-center border-b border-[#2a2a35] pb-1 text-amber-400 font-bold">
                   <span className="flex items-center gap-1.5 uppercase tracking-wide text-[8.5px]">
@@ -939,11 +950,10 @@ export default function CommandCenterView({
                   <div><span className="text-white/40">Success Rate:</span> <span className="text-emerald-400 font-bold">{selectedRoute.successRate}%</span></div>
                 </div>
               </div>
-            ) : (
-              <div className="p-3 bg-[#050507] rounded-sm border border-white/5 text-[9px] text-white/50 leading-relaxed font-sans">
-                💡 <span className="font-bold text-[#02c39a]">Command Option:</span> Click on any connecting route arc on the map above to view the precise inter-node latency details, packet loss coefficients, and network consensus verification states.
-              </div>
             )}
+
+            {/* Persistent real-time Quantum Entropy Oscilloscope on side HUD */}
+            <QuantumEntropyOscilloscope />
           </div>
 
           {/* Core Consensus Observatory Dashboard widget */}
