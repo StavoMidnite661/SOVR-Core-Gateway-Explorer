@@ -23,6 +23,7 @@ import ConnectedAppsList from './components/ConnectedAppsList';
 import RegisterIntegrationForm from './components/RegisterIntegrationForm';
 import CommandCenterView from './components/CommandCenterView';
 import SovereignLanding from './components/SovereignLanding';
+import MobileTerminalView from './components/MobileTerminalView';
 
 // Lucide Icons
 import { 
@@ -58,6 +59,17 @@ export default function App() {
   const [gatewayURL] = useState("https://gateway.sovr.local/v1");
   const [wsURL] = useState("wss://gateway.sovr.local/v1/stream");
   const [isConnected, setIsConnected] = useState(true);
+
+  // Screen size tracking for responsive breakpoint strategy
+  const [screenWidth, setScreenWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setScreenWidth(window.innerWidth);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // States
   const [accounts, setAccounts] = useState<LedgerAccount[]>(() => [...INITIAL_ACCOUNTS]);
@@ -476,6 +488,25 @@ export default function App() {
             totalSVT={totalSVT} 
           />
         </motion.div>
+      ) : screenWidth < 768 ? (
+        <MobileTerminalView
+          accounts={accounts}
+          transactions={transactions}
+          apps={apps}
+          volumeSeries={volumeSeries}
+          health={health}
+          currentBlock={chain[0]}
+          chain={chain}
+          isConnected={isConnected}
+          setIsConnected={setIsConnected}
+          onPostTransaction={handlePostTransaction}
+          onExportLogs={handleExportLogs}
+          onForceSeal={handleForceSeal}
+          notifications={notifications}
+          clearNotifications={() => setNotifications([])}
+          totalSVT={totalSVT}
+          totalAssetsUSD={totalAssetsUSD}
+        />
       ) : (
         <motion.div
           key="app"

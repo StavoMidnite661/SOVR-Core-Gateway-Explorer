@@ -154,6 +154,24 @@ export default function SovereignGlobe({
   const lastSelectedNodeIdRef = useRef<string | null>(null);
   const triggerShockwaveRef = useRef<((nodeId: string) => void) | null>(null);
 
+  // High-performance state-sync refs to escape ThreeJS stale closures 
+  const selectedNodeIdRef = useRef<string | null>(selectedNodeId);
+  const selectedRouteIdRef = useRef<string | null>(selectedRouteId);
+  const routeLinesMapRef = useRef<{ [routeId: string]: THREE.Line }>({});
+  const geoNodesRef = useRef(geoNodes);
+
+  useEffect(() => {
+    selectedNodeIdRef.current = selectedNodeId;
+  }, [selectedNodeId]);
+
+  useEffect(() => {
+    selectedRouteIdRef.current = selectedRouteId;
+  }, [selectedRouteId]);
+
+  useEffect(() => {
+    geoNodesRef.current = geoNodes;
+  }, [geoNodes]);
+
   useEffect(() => {
     if (selectedNodeId && selectedNodeId !== lastSelectedNodeIdRef.current) {
       if (triggerShockwaveRef.current) {
@@ -172,6 +190,27 @@ export default function SovereignGlobe({
       pos: latLngToVector3(node.lat, node.lon, GLOBE_RADIUS)
     }));
   }, [geoNodes]);
+
+  const nodeScreenPositionsRef = useRef(nodeScreenPositions);
+  useEffect(() => {
+    nodeScreenPositionsRef.current = nodeScreenPositions;
+  }, [nodeScreenPositions]);
+
+  // Actionable secondary effect to instantly update line materials when selection shifts
+  useEffect(() => {
+    Object.keys(routeLinesMapRef.current).forEach((routeId) => {
+      const line = routeLinesMapRef.current[routeId];
+      if (line) {
+        const isRouteSelected = selectedRouteId === routeId;
+        const mat = line.material as THREE.LineBasicMaterial;
+        if (mat) {
+          mat.opacity = isRouteSelected ? 0.95 : 0.40;
+          mat.linewidth = isRouteSelected ? 2.5 : 0.85;
+          mat.needsUpdate = true;
+        }
+      }
+    });
+  }, [selectedRouteId]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -538,7 +577,7 @@ export default function SovereignGlobe({
       if (r.id === 'R4' || r.id === 'R7') routeColor = '#a855f7'; // Consensus Sync
       if (r.id === 'R6') routeColor = '#f43f5e'; // Flagged anomaly link
 
-      const isRouteSelected = selectedRouteId === r.id;
+      const isRouteSelected = selectedRouteIdRef.current === r.id;
 
       const splineMat = new THREE.LineBasicMaterial({
         color: new THREE.Color(routeColor),
@@ -549,6 +588,7 @@ export default function SovereignGlobe({
 
       const routeLine = new THREE.Line(splineGeom, splineMat);
       globeGroup.add(routeLine);
+      routeLinesMapRef.current[r.id] = routeLine;
 
       // Mesh Packet for animated flow (Glowing particle)
       const packetGeom = new THREE.SphereGeometry(0.015, 8, 8);
@@ -729,7 +769,7 @@ export default function SovereignGlobe({
 
         // Dispatch laser validation witness vectors to geosites occasionally (Satellite Witness signing)
         if (Math.random() < 0.005) {
-          const targetNode = geoNodes[Math.floor(Math.random() * geoNodes.length)];
+          const targetNode = geoNodesRef.current[Math.floor(Math.random() * geoNodesRef.current.length)];
           if (targetNode) {
             const nodeVec = latLngToVector3(targetNode.lat, targetNode.lon, GLOBE_RADIUS);
             
@@ -744,7 +784,7 @@ export default function SovereignGlobe({
             const laserLine = new THREE.Line(laserGeom, laserMat);
             globeGroup.add(laserLine);
 
-            const matchedIndex = geoNodes.findIndex(n => n.id === targetNode.id);
+            const matchedIndex = geoNodesRef.current.findIndex(n => n.id === targetNode.id);
             if (matchedIndex !== -1 && nodeMeshes[matchedIndex]) {
               nodeMeshes[matchedIndex].scale.set(2.2, 2.2, 2.2);
             }
@@ -790,8 +830,8 @@ export default function SovereignGlobe({
           const ringRad = 0.01;
           const currentRadius = scl * ringRad;
 
-          geoNodes.forEach((node, nodeIdx) => {
-            if (node.id === selectedNodeId) return; // ignore origin
+          geoNodesRef.current.forEach((node, nodeIdx) => {
+            if (node.id === selectedNodeIdRef.current) return; // ignore origin
             if (sw.triggeredNodes.has(node.id)) return;
 
             const otherVec = latLngToVector3(node.lat, node.lon, GLOBE_RADIUS);
@@ -830,7 +870,7 @@ export default function SovereignGlobe({
       });
 
       // Position DOM Label overlays dynamically matching projected 3D nodes
-      nodeScreenPositions.forEach(node => {
+      nodeScreenPositionsRef.current.forEach(node => {
         const el = document.getElementById(`globe-label-${node.id}`);
         if (el) {
           projectVector.copy(node.pos);
@@ -864,11 +904,15 @@ export default function SovereignGlobe({
     // ----------------------------------------------------
     const resizeObserver = new ResizeObserver((entries) => {
       for (const entry of entries) {
-        width = entry.contentRect.width;
-        height = entry.contentRect.height;
-        renderer.setSize(width, height);
-        camera.aspect = width / height;
-        camera.updateProjectionMatrix();
+        const w = entry.contentRect.width;
+        const h = entry.contentRect.height;
+        if (w > 0 && h > 0) {
+          width = w;
+          height = h;
+          renderer.setSize(w, h);
+          camera.aspect = w / h;
+          camera.updateProjectionMatrix();
+        }
       }
     });
     resizeObserver.observe(container);
@@ -912,7 +956,7 @@ export default function SovereignGlobe({
       coreMat.dispose();
       renderer.dispose();
     };
-  }, [nodeScreenPositions, routes, selectedRouteId]);
+  }, [geoNodes.length, routes.length]);
 
   return (
     <div 
