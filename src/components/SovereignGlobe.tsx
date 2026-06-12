@@ -43,6 +43,7 @@ interface SOVRGlobeProps {
   onSelectNode: (id: string | null) => void;
   onSelectRoute: (id: string | null) => void;
   heatmapOn: boolean;
+  activeMode?: string;
 }
 
 // Highly precise continental projection coordinates for high-trust offline outlines
@@ -145,7 +146,8 @@ export default function SovereignGlobe({
   selectedRouteId,
   onSelectNode,
   onSelectRoute,
-  heatmapOn
+  heatmapOn,
+  activeMode = 'network'
 }: SOVRGlobeProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -248,12 +250,39 @@ export default function SovereignGlobe({
     // ----------------------------------------------------
     // GLOBE LAYERS
     // ----------------------------------------------------
+    let surfaceColor = 0x070c14;
+    let outlineColor = 0xa855f7;
+    let secondaryOutlineColor = 0xec4899;
+    let innerColor = 0x140424;
+
+    if (activeMode === 'treasury') {
+      surfaceColor = 0x150f02;             // Dark amber ocean
+      outlineColor = 0xf59e0b;             // Amber continent outline
+      secondaryOutlineColor = 0xd97706;    // Gold outer glow
+      innerColor = 0x241504;               // Deep golden-brown depth
+    } else if (activeMode === 'consensus') {
+      surfaceColor = 0x0d0716;             // Dark purple ocean
+      outlineColor = 0x8b5cf6;             // Violet continent outline
+      secondaryOutlineColor = 0xc084fc;    // Light violet glow
+      innerColor = 0x1c0c30;               // Deep violet core
+    } else if (activeMode === 'forensics') {
+      surfaceColor = 0x180509;             // Dark crimson ocean
+      outlineColor = 0xf43f5e;             // Alert rose outline
+      secondaryOutlineColor = 0xbe123c;    // Pulsating deep red glow
+      innerColor = 0x2e050c;               // Crimson threat core
+    } else if (activeMode === 'ingestion') {
+      surfaceColor = 0x021015;             // Deep cyan ocean
+      outlineColor = 0x06b6d4;             // Cyan continent outline
+      secondaryOutlineColor = 0x0891b2;    // Ocean cyan glow
+      innerColor = 0x022026;               // Cyber core cyan depth
+    }
+
     const colors = {
-      surface: 0x070c14, // Deep dark navy/black ocean
-      outline: 0xa855f7, // Laser-like purple/violet continent outline
-      secondaryOutline: 0xec4899, // Highlight Pink outer glow
-      glow: 0x00f2ff,    // Cyan operational glow
-      inner: 0x140424    // Deep purple depth inside core
+      surface: surfaceColor,
+      outline: outlineColor,
+      secondaryOutline: secondaryOutlineColor,
+      glow: 0x00f2ff,
+      inner: innerColor
     };
 
     // Layer 1: Globe Base Sphere
@@ -405,8 +434,9 @@ export default function SovereignGlobe({
       const nodeGroup = new THREE.Group();
       nodeGroup.position.copy(pos);
       
-      // Orient towards center of sphere outward
-      nodeGroup.lookAt(new THREE.Vector3(0, 0, 0));
+      // Orient away from center of sphere (outward normal vector)
+      const outwardTarget = pos.clone().multiplyScalar(2);
+      nodeGroup.lookAt(outwardTarget);
 
       const isWarningNode = node.status === 'WARNING';
       const isDegradedNode = node.status === 'DEGRADED';
@@ -420,7 +450,7 @@ export default function SovereignGlobe({
       });
       const dotMesh = new THREE.Mesh(dotGeom, dotMat);
       // Offset slightly to keep it floating above the land mesh
-      dotMesh.position.z = 0.005;
+      dotMesh.position.z = 0.012;
       nodeGroup.add(dotMesh);
 
       // Outer Ring
@@ -432,6 +462,7 @@ export default function SovereignGlobe({
         opacity: 0.8
       });
       const ringMesh = new THREE.Mesh(ringGeom, ringMat);
+      ringMesh.position.z = 0.012;
       nodeGroup.add(ringMesh);
 
       globeGroup.add(nodeGroup);
@@ -740,7 +771,13 @@ export default function SovereignGlobe({
 
       // Animate flowing communication packets along great-circle pathways
       packetMeshes.forEach(p => {
-        const progress = (timeInSec * p.speed + p.offset) % 1.0;
+        let currentSpeed = p.speed;
+        if (activeMode === 'ingestion') {
+          currentSpeed *= 2.2; // Double packet velocity for deep ingestion throughput
+        } else if (activeMode === 'forensics') {
+          currentSpeed *= 0.55; // Slow down for forensic stream tracing
+        }
+        const progress = (timeInSec * currentSpeed + p.offset) % 1.0;
         const pt = p.curve.getPointAt(progress);
         p.mesh.position.copy(pt);
 
@@ -956,7 +993,7 @@ export default function SovereignGlobe({
       coreMat.dispose();
       renderer.dispose();
     };
-  }, [geoNodes.length, routes.length]);
+  }, [geoNodes.length, routes.length, activeMode]);
 
   return (
     <div 

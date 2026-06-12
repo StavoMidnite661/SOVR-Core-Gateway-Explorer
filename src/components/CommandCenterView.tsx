@@ -72,6 +72,10 @@ export default function CommandCenterView({
   const [pendingVerifications, setPendingVerifications] = useState<number>(3);
   const [pulseCount, setPulseCount] = useState<number>(0);
 
+  // SECURE OPERATOR TRACE TERMINAL STATES
+  const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
+  const [terminalTyping, setTerminalTyping] = useState<boolean>(false);
+
   // Simulation data
   const geoNodes: GeoNode[] = useMemo(() => [
     {
@@ -396,6 +400,43 @@ export default function CommandCenterView({
     return () => clearInterval(timer);
   }, [transactions, formatCurrency]);
 
+  // Typing operator terminal trace effect on node selection
+  useEffect(() => {
+    setTerminalTyping(true);
+    let logs: string[] = [];
+    if (selectedNode) {
+      logs = [
+        `[SOVR_SHELL] CONNECTED to host: ${selectedNode.name} (${selectedNode.id})`,
+        `[AUTH_HANDSHAKE] mTLS v1.3 stream mutually-confirmed: PASS`,
+        `[COMPLIANCE] Merkle root seal matching state digest verified`,
+        `[DIAGNOSTIC] latency: ${selectedNode.latency}ms RT, CPU: ${selectedNode.cpu}%, RAM: ${selectedNode.ram}%`,
+        `[SECURITY] Authority ledger invariance validated. Net drift: 0.000`
+      ];
+    } else {
+      logs = [
+        `[SOVR_SHELL] Standby for Operator Select Actions...`,
+        `> listening on port 3000...`,
+        `> running local consensus loops... ALL CORES NOMINAL.`
+      ];
+    }
+    
+    setTerminalLogs([logs[0] || '']);
+    let index = 1;
+    const interval = setInterval(() => {
+      if (index < logs.length) {
+        setTerminalLogs(prev => [...prev, logs[index]]);
+        index++;
+      } else {
+        clearInterval(interval);
+        setTerminalTyping(false);
+      }
+    }, 130);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [selectedNodeId]);
+
   const handleTriggerAnomalySimulation = () => {
     const alerts = [
       'Federal Reserve FedNow packet payload handshake pending retry',
@@ -512,41 +553,33 @@ export default function CommandCenterView({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch flex-grow">
         
         {/* Left Column: Spatial Telemetry Map or Detail Mode Specific (7 Columns out of 12) */}
-        <div className="lg:col-span-7 bg-[#08080c] border border-[#2a2a35] min-h-[380px] lg:h-[520px] rounded p-4 flex flex-col justify-between relative overflow-hidden transition-all duration-300">
-                  {/* Background Cyberpunk Stationary Globe Hologram! (8-12% opacity) */}
-          {activeMode !== 'network' && (
-            <div className="absolute inset-0 pointer-events-none flex items-center justify-center scale-90 md:scale-100 select-none opacity-10">
-              <svg viewBox="0 0 400 400" className="w-full h-full text-[#22d3ee]/60 stroke-current animate-[spin_120s_linear_infinite]">
-                {/* Outer boundary */}
-                <circle cx="200" cy="200" r="180" fill="none" strokeWidth="1" strokeDasharray="5 5" />
-                <circle cx="200" cy="200" r="130" fill="none" strokeWidth="0.5" strokeDasharray="3 15" />
-                <circle cx="200" cy="200" r="70" fill="none" strokeWidth="0.5" strokeDasharray="3 3" />
-                
-                {/* Ellipse Meridiand & Latitudes to represent a holographic sphere projection */}
-                <ellipse cx="200" cy="200" rx="180" ry="60" fill="none" strokeWidth="0.5" />
-                <ellipse cx="200" cy="200" rx="180" ry="120" fill="none" strokeWidth="0.75" />
-                <ellipse cx="200" cy="200" rx="60" ry="180" fill="none" strokeWidth="0.5" />
-                <ellipse cx="200" cy="200" rx="120" ry="180" fill="none" strokeWidth="0.75" />
-                <line x1="20" y1="200" x2="380" y2="200" strokeWidth="1" />
-                <line x1="200" y1="20" x2="200" y2="380" strokeWidth="1" />
-                
-                {/* Subtle tech tick marks inside the globe */}
-                <circle cx="200" cy="200" r="175" fill="none" strokeWidth="1" strokeDasharray="1 10" />
-              </svg>
-            </div>
-          )}
+        <div className="lg:col-span-7 bg-[#08080c] border border-[#2a2a35] min-h-[420px] lg:h-[520px] rounded p-4 flex flex-col justify-between relative overflow-hidden transition-all duration-300">
+          
+          {/* ALWAYS RENDER THE 3D ROTATING GLOBE IN THE BACKGROUND! */}
+          <div id="globe_canvas_container" className="absolute inset-x-0 bottom-0 top-12 z-0 overflow-hidden pointer-events-auto">
+            <SovereignGlobe
+              geoNodes={geoNodes}
+              routes={routes}
+              selectedNodeId={selectedNodeId}
+              selectedRouteId={selectedRouteId}
+              onSelectNode={setSelectedNodeId}
+              onSelectRoute={setSelectedRouteId}
+              heatmapOn={heatmapOn}
+              activeMode={activeMode}
+            />
+          </div>
 
           {/* Mode-Specific Content Layout for Left Map-Area Panel */}
           {activeMode === 'network' && (
-            <>
+            <div className="z-10 pointer-events-none h-full flex flex-col justify-between relative">
               {/* Title & Controls */}
-              <div className="z-10 flex items-start justify-between">
+              <div className="z-10 flex items-start justify-between pointer-events-auto">
                 <div>
                   <span className="text-white/40 uppercase text-[9px] font-bold tracking-widest block border-b border-[#2a2a35]/60 pb-1 flex items-center gap-1.5">
                     <Globe className="w-3.5 h-3.5 text-[#02c39a]" />
                     Map: Spatial Capital Router Telemetry (Drag to rotate, Shift to drift)
                   </span>
-                  <p className="text-[8.5px] text-white/25 mt-1">REAL-TIME PACKET ARC DEVIATIONS // GRAPH INTERCONNECT SYSTEMS</p>
+                  <p className="text-[8.5px] text-white/25 mt-1 font-mono">REAL-TIME PACKET ARC DEVIATIONS // GRAPH INTERCONNECT SYSTEMS</p>
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -563,25 +596,12 @@ export default function CommandCenterView({
                 </div>
               </div>
 
-              {/* Interactive 3D Rotating Globe Canvas */}
-              <div id="globe_canvas_container" className="relative flex-grow h-full w-full min-h-[220px] mt-4 z-10 overflow-hidden">
-                <SovereignGlobe
-                  geoNodes={geoNodes}
-                  routes={routes}
-                  selectedNodeId={selectedNodeId}
-                  selectedRouteId={selectedRouteId}
-                  onSelectNode={setSelectedNodeId}
-                  onSelectRoute={setSelectedRouteId}
-                  heatmapOn={heatmapOn}
-                />
-              </div>
-
               {/* Ingress status footer metrics inside the map visual panel */}
-              <div className="flex items-center justify-between z-10 text-[8.5px] text-white/35 font-bold uppercase tracking-widest border-t border-[#2a2a35]/50 pt-2 font-mono">
+              <div className="flex items-center justify-between z-10 text-[8.5px] text-white/35 font-bold uppercase tracking-widest border-t border-[#2a2a35]/50 pt-2 font-mono bg-[#040406]/60 backdrop-blur-[2px] p-2 rounded">
                 <span>Ingress protocol rate: 99.98% accurate</span>
                 <span>Active regional consensus synchronized ({geoNodes.length}/{geoNodes.length} nodes verified)</span>
               </div>
-            </>
+            </div>
           )}
 
           {activeMode === 'treasury' && (
@@ -922,6 +942,26 @@ export default function CommandCenterView({
                   </div>
                 </div>
               </div>
+
+              {/* Real-time Streaming Terminal logs shell */}
+              <div className="mt-3.5 border border-white/5 bg-[#030305]/95 rounded p-2.5 font-mono text-[9px] leading-tight text-white/50 space-y-1 relative overflow-hidden">
+                <div className="flex items-center justify-between border-b border-white/10 pb-1 mb-1.5 text-[7.5px] text-white/35 font-bold uppercase tracking-wider">
+                  <span className="flex items-center gap-1">
+                    <span className={`w-1.5 h-1.5 rounded-full ${terminalTyping ? 'bg-amber-400 animate-pulse' : 'bg-[#02c39a]'}`} />
+                    Operator secure host trace terminal
+                  </span>
+                  <span>MTLS v1.3 CHANNEL</span>
+                </div>
+                <div className="space-y-1 h-[75px] overflow-y-auto scrollbar-thin select-text font-mono">
+                  {terminalLogs.map((log, logIdx) => (
+                    <div key={logIdx} className={`truncate ${log.includes('FAIL') || log.includes('ERR') ? 'text-rose-400' : log.includes('CONNECTED') || log.includes('Mutually') || log.includes('stream') ? 'text-emerald-400 font-bold' : 'text-[#22d3ee]'}`}>
+                      {log}
+                    </div>
+                  ))}
+                  {terminalTyping && <span className="inline-block w-1 h-2.5 bg-[#02c39a] animate-pulse ml-0.5" />}
+                </div>
+              </div>
+
             </div>
 
             {/* If a route is clicked, display Route Telemetry Drawer popup widget */}
