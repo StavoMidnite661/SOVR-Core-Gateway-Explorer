@@ -4,9 +4,10 @@ import {
   TrendingUp, X, Play, Pause, Search, Clock, ArrowUpRight, 
   Terminal, BarChart2, ShieldAlert, Cpu as CoreCpu, Layers, AlertCircle, CheckCircle
 } from 'lucide-react';
-import { Transaction } from '../types';
+import { Transaction, LedgerAccount } from '../types';
 import SovereignGlobe from './SovereignGlobe';
 import QuantumEntropyOscilloscope from './QuantumEntropyOscilloscope';
+import ComplianceHub from './ComplianceHub';
 
 interface CommandCenterViewProps {
   onClose: () => void;
@@ -15,6 +16,7 @@ interface CommandCenterViewProps {
   p99LatencyMs: number;
   transactions: Transaction[];
   formatCurrency: (amount: number, denom: string) => string;
+  accounts: LedgerAccount[];
 }
 
 interface GeoNode {
@@ -57,10 +59,11 @@ export default function CommandCenterView({
   totalSVT,
   p99LatencyMs,
   transactions,
-  formatCurrency
+  formatCurrency,
+  accounts
 }: CommandCenterViewProps) {
-  // Modes: 'network' | 'treasury' | 'consensus' | 'ingestion' | 'agents' | 'forensics'
-  const [activeMode, setActiveMode] = useState<'network' | 'treasury' | 'consensus' | 'ingestion' | 'agents' | 'forensics'>('network');
+  // Modes: 'network' | 'treasury' | 'consensus' | 'ingestion' | 'agents' | 'forensics' | 'compliance'
+  const [activeMode, setActiveMode] = useState<'network' | 'treasury' | 'consensus' | 'ingestion' | 'agents' | 'forensics' | 'compliance'>('network');
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>('NY_LC');
   const [selectedRouteId, setSelectedRouteId] = useState<string | null>(null);
   const [heatmapOn, setHeatmapOn] = useState<boolean>(true);
@@ -355,7 +358,7 @@ export default function CommandCenterView({
         const timestamp = new Date().toTimeString().split(' ')[0];
         setTimelineEvents(prev => [
           { 
-            id: `ev_${Date.now()}`, 
+            id: `ev_${Date.now()}_con_${Math.floor(Math.random() * 10000)}`, 
             time: timestamp, 
             msg: `New cryptographic block state #7421 authority seal produced successfully.`, 
             type: 'CONSENSUS' 
@@ -386,7 +389,7 @@ export default function CommandCenterView({
 
         setTimelineEvents(prev => [
           {
-            id: `ev_${Date.now()}`,
+            id: `ev_${Date.now()}_txn_${Math.floor(Math.random() * 10000)}`,
             time: timestamp,
             msg: customMsg,
             type: selectedType
@@ -446,7 +449,7 @@ export default function CommandCenterView({
     ];
     const alertText = alerts[Math.floor(Math.random() * alerts.length)];
     setAnomalies(prev => [
-      { id: `an_${Date.now()}`, text: alertText, severe: Math.random() > 0.5, dismissed: false },
+      { id: `an_${Date.now()}_${Math.floor(Math.random() * 10000)}`, text: alertText, severe: Math.random() > 0.5, dismissed: false },
       ...prev
     ]);
   };
@@ -525,7 +528,7 @@ export default function CommandCenterView({
 
         {/* Global Modes Controllers */}
         <div className="flex flex-wrap items-center gap-1.5 bg-[#08080c] p-1 border border-[#2a2a35] rounded-sm">
-          {(['network', 'treasury', 'consensus', 'ingestion', 'agents', 'forensics'] as const).map(mode => (
+          {(['network', 'treasury', 'consensus', 'ingestion', 'agents', 'forensics', 'compliance'] as const).map(mode => (
             <button
               key={mode}
               onClick={() => setActiveMode(mode)}
@@ -877,6 +880,14 @@ export default function CommandCenterView({
                 <span>SHA-256 Ledger invariance hash: Nominal</span>
               </div>
             </div>
+          )}
+
+          {activeMode === 'compliance' && (
+            <ComplianceHub
+              accounts={accounts}
+              transactions={transactions}
+              formatCurrency={formatCurrency}
+            />
           )}
 
         </div>

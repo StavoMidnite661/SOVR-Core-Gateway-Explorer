@@ -1,10 +1,12 @@
 # 📂 Cryptographic Component Directory (`/src/components`)
 
-This directory houses the primary frontend UI interactive segments, data visualizations, and cryptographic simulators of the **SOVR Core Command Center** interface hierarchy. All items are modular, typed with standard TypeScript, and fully styled via Tailwind CSS util classes with `motion` spring states.
+This directory houses the primary frontend UI interactive segments, data visualizations, operational verification systems, and cryptographic simulators of the **SOVR Core Command Center** interface hierarchy. All items are modular, typed with standard TypeScript, and fully styled via Tailwind CSS utility classes with custom standard `motion` spring states for seamless visual transitions.
 
 ---
 
 ## 🏗️ Core Structural Layout
+
+The dashboard is structured hierarchy-wise to maintain high performance and clean data flow across distinct subsystems:
 
 ```mermaid
 graph TD
@@ -20,6 +22,7 @@ graph TD
     CommandCenterView --> ManualTransactionForm[ManualTransactionForm.tsx]
     CommandCenterView --> RegisterIntegrationForm[RegisterIntegrationForm.tsx]
     CommandCenterView --> QuantumEntropyOscilloscope[QuantumEntropyOscilloscope.tsx]
+    CommandCenterView --> ComplianceHub[ComplianceHub.tsx]
 ```
 
 ---
@@ -47,6 +50,7 @@ graph TD
 * **Component Attributes / State Hierarchy**:
   - Receives complete state matrices from `App.tsx` (all ledger histories, total seed states, active webhook configs) to broadcast state events instantly.
   - Features real-time state clocks synchronizing local timezone offsets with standard UTC offsets.
+  - Allows the operator to toggle between different modules: **Network Telemetry**, **Treasury Pool**, **Quorum Consensus**, **Ingestion Portal**, **Autonomous Agents**, **Forensics Ledger**, and **SOVR Compliance**.
 
 ---
 
@@ -64,7 +68,7 @@ graph TD
   }
   ```
 * **Performance Parameters**:
-  - Utilizes `requestAnimationFrame` for rotation math, bounded with component cleanup loops inside dedicated `useEffect` hooks to prevent memory leaks.
+  - Utilizes `requestAnimationFrame` for rotation math, bounded with component cleanup loops inside dedicated `useEffect` hooks to prevent memory leaks and frame jitter.
 
 ---
 
@@ -76,7 +80,7 @@ graph TD
 ---
 
 ### 5. `AccountsList.tsx`
-* **Purpose**: Modern double-entry double-entry account ledger tracker, showing category filters for:
+* **Purpose**: Modern double-entry account ledger tracker, showing category filters for:
   - Assets (`asset`)
   - Escrow (`escrow`)
   - Liabilities (`liability`)
@@ -112,7 +116,7 @@ graph TD
 ---
 
 ### 8. `TransactionsHistory.tsx`
-* **Purpose**: Robust transactional grid with deep sorting capabilities. Shows forensic routing trees mapping credit sources and debit dests.
+* **Purpose**: Robust transactional grid with deep sorting capabilities. Shows forensic routing trees mapping credit sources and debit destinations.
 * **Features**:
   - Supports search pattern filtering against specific public transaction hash addresses or transaction descriptions.
 
@@ -120,12 +124,50 @@ graph TD
 
 ### 9. `ManualTransactionForm.tsx` & `RegisterIntegrationForm.tsx`
 * **Purpose**: Data-entry forms verifying and executing ledger changes:
-  - **Manual Transactions**: Requires debit balance balance offsets to strictly match credit values (`Debit == Credit` alignment) before firing off the state dispatch callbacks.
+  - **Manual Transactions**: Requires debit balance offsets to strictly match credit values (`Debit == Credit` alignment) before firing off the state dispatch callbacks in App.tsx. Implements inline mathematical verification tools.
   - **Register Integration**: Supports entering remote API targets, token challenges, and signature credentials securely.
+
+---
+
+### 10. `ComplianceHub.tsx` (SOVR Development Holdings LLC Compliance Center) [NEWLY EXPANDED]
+* **Purpose**: A comprehensive, specialized regulatory command board modeled after SOVR Development Holdings LLC statutory enterprise guidelines. It bridges robust multi-segment validation criteria with ultra-modern high-density ledger state visualization tools.
+* **Property Signature & Interface**:
+  ```typescript
+  interface ComplianceHubProps {
+    accounts: LedgerAccount[];       // Live double-entry GAAP ledger configuration
+    transactions: Transaction[];     // Global recorded transaction ledgers
+    formatCurrency: (amountMinor: number, currency: string) => string; // Core scaling math
+  }
+  ```
+* **Integrated Submodules**:
+  - **Playbook Workspace**: 
+    - *F0901 Account Master Formatter*: Parses raw account input strings dynamically utilizing a period-point (`.`) separator to compute standard (`BU.OBJ.SUB`), 3rd G/L alternate, short ID keys, and speed codes.
+    - *F0901 Master Index Reorder Sweep*: Emulates critical legacy restructuring runs with interactive real-time text output logs indicating index integrity validation.
+    - *Enhanced Subledger Analysis (ESA)*: Supports filtering ledger balances by legacy subledger parameters (Asset 'A', Numeric 'N', Customer 'C') and maps references against standard master files (`F0101 Address Book` and `F1201 Asset Master`).
+  - **Pre-Audit Proofing Console (P09301)**: 
+    - Compiles transactional registers into raw matrix prints representing:
+      - *Unposted General Journals* (Proof registers for open postings)
+      - *Batch Sequences (F0011)* (Continuous record batching verification)
+      - *Categorized Account Numbers* (Sequenced classification listings)
+    - Automatically calculates absolute raw checksum hash ranges by omitting decimal representation flags.
+  - **Trial Balance Audits (P09410 Series)**:
+    - Renders dynamic trial balances from live `F0902` summaries.
+    - Features rapid toggles between *Business Unit Sequence (P09410)* and *Object Account Sequence (P094121)*, summarizing net debits vs net credits alongside strict balanced alignment tags.
+  - **Statutory Corporate Statements (P10111)**:
+    - *Accrual Income Statement (P10211)*: Standard GAAP calculations outlining active Operating Revenue, Product Cost of Goods Sold (COGS), Gross Operating Margins, administrative Operational Expenses (OpEx), and Net Regulatory Income.
+    - *Statement of Cash Flow (P10521 Compiled Check)*: Interactive checklist verifying F0008 fiscal dates, F0901 cash account mapping tags, GLG Automatic Accounting Instructions (AAI), and month-end accrual journal sweeps.
+  - **Ledger Stress Integrity Scanner (F0911)**:
+    - Initiates real-time verification scans cross-checking raw journal detail logs (`F0911`) against summarizing rows (`F0902`).
+    - Outputs diagnostic exception report indices to detect and intercept ledger drift or balancing abnormalities.
+    - Enforces *Ampersand Audit Policy* (&) overrides allowing operators to simulate standard bypass rules for temporary work-in-progress lines.
+  - **Operations Print Desk & Document Export Bureau**:
+    - Generates retro, high-density matrix plain text reports inside a styled vintage paper layout. 
+    - Supports **Print Hardcopy** (utilizing a hidden iframe printing pipeline to generate margins-perfect physical prints without visual screen waste), **Download TXT File** (installs local physical ledger diagnostic logs), and **Copy Plain Text** triggers.
 
 ---
 
 ## 🔑 State & Data Binding Design Best Practices
 
 1. **Avoid Double-State Synchronization**: Let the top parent (`App.tsx` or `CommandCenterView.tsx`) hold the absolute truth (single source of truth).
-2. **Proper Cleanup**: Always release Web Audio context nodes and stop `setInterval` variables inside native React `useEffect` callback arrays to maintain zero leakage.
+2. **Proper Cleanup**: Always release Web Audio context nodes and stop `setInterval` variables inside native React `useEffect` callback arrays to maintain zero memory leakage and prevent audio buffer glitches.
+3. **Double-Entry Balance Verification**: Always assert that the sum of debit minor increments equals the sum of credit minor increments before performing state transition pushes.

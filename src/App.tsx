@@ -435,7 +435,7 @@ export default function App() {
         }
 
         setNotifications(prev => [
-          { id: Date.now(), type: randomCat, message: msg, time: 'Just now', status },
+          { id: Date.now() + Math.random(), type: randomCat, message: msg, time: 'Just now', status },
           ...prev.slice(0, 15)
         ]);
       }
@@ -1028,8 +1028,37 @@ export default function App() {
                  </div>
 
                  {/* Forensic Cryptographic Proof Drawer (Reveal on expansion) */}
-                 {isProofExpanded && (
-                   <div id="crypto-forensic-drawer" className="mt-3 p-3 bg-[#050507] border border-[#2a2a35] rounded-sm font-mono text-[9px] text-white/70 space-y-3 animate-fade-in">
+                  <AnimatePresence>
+                    {isProofExpanded && (
+                    <motion.div
+                      id="crypto-forensic-drawer"
+                      initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                      animate={{ 
+                        opacity: 1, 
+                        height: "auto", 
+                        marginTop: 12,
+                        transition: {
+                          height: {
+                            type: "spring",
+                            stiffness: 240,
+                            damping: 24
+                          },
+                          opacity: { duration: 0.15 },
+                          marginTop: { duration: 0.1 }
+                        }
+                      }}
+                      exit={{ 
+                        opacity: 0, 
+                        height: 0, 
+                        marginTop: 0,
+                        transition: {
+                          height: { duration: 0.18, ease: "easeInOut" },
+                          opacity: { duration: 0.1 },
+                          marginTop: { duration: 0.1 }
+                        }
+                      }}
+                      className="p-3 bg-[#050507] border border-[#2a2a35] rounded-sm font-mono text-[9px] text-white/70 space-y-3 overflow-hidden"
+                    >
                      <div className="space-y-1">
                        <span className="text-[8px] text-white/35 uppercase font-bold tracking-widest block">Active Merkle Root Path Indices:</span>
                        <pre className="text-[8px] text-cyan-400 bg-[#08080c] p-2 rounded overflow-x-auto border border-white/5 scrollbar-thin">
@@ -1106,8 +1135,9 @@ export default function App() {
                          Export Proof
                        </button>
                      </div>
-                   </div>
+                   </motion.div>
                  )}
+               </AnimatePresence>
 
                  <div className="bg-[#050507] p-3 rounded mt-1.5 text-[10.5px] text-white/55 border border-[#2a2a35] flex items-start gap-2.5 leading-relaxed">
                    <Info className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
@@ -1147,6 +1177,7 @@ export default function App() {
           p99LatencyMs={health.p99LatencyMs}
           transactions={transactions}
           formatCurrency={formatCurrency}
+          accounts={accounts}
         />
       )}
       {false && isCommandViewActive && (

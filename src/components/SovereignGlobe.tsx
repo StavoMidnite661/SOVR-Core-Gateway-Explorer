@@ -472,6 +472,15 @@ export default function SovereignGlobe({
     // --- QUANTUM ENTANGLEMENT SYNC ENGINE: SATELLITES & SHOCKWAVES ---
     const activeShockwaves: { mesh: THREE.Mesh; progress: number; origin: THREE.Vector3; triggeredNodes: Set<string> }[] = [];
     const activeLasers: { line: THREE.Line; maxAge: number; age: number }[] = [];
+    
+    // Elevated particle system for beautiful outward-radiating node flares on selection
+    const activeParticles: {
+      mesh: THREE.Mesh;
+      velocity: THREE.Vector3;
+      origin: THREE.Vector3;
+      age: number;
+      maxAge: number;
+    }[] = [];
     interface Satellite {
       group: THREE.Group;
       mesh: THREE.Mesh;
@@ -548,33 +557,83 @@ export default function SovereignGlobe({
       });
     }
 
-    // React shockwave trigger handler subscription
+    // React shockwave trigger handler subscription - Elevated with Concentric Wave Train and Particle Flares!
     triggerShockwaveRef.current = (nodeId: string) => {
       const node = geoNodes.find(n => n.id === nodeId);
       if (!node) return;
       const originVec = latLngToVector3(node.lat, node.lon, GLOBE_RADIUS);
 
+      // 1. Create a "Ripple Wave Train" containing 3 concentric, hyper-glitzy waves
+      const ringColors = [0xf97316, 0xec4899, 0x00f2ff]; // Orange -> Magenta -> Cyan
       const ringRadius = 0.01;
-      const shockwaveGeom = new THREE.RingGeometry(ringRadius * 0.85, ringRadius * 1.15, 32);
-      const shockwaveMat = new THREE.MeshBasicMaterial({
-        color: 0xf97316, // Beautiful warm orange/neon color
-        transparent: true,
-        opacity: 1.0,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      });
-      const shockwaveMesh = new THREE.Mesh(shockwaveGeom, shockwaveMat);
-      shockwaveMesh.position.copy(originVec).multiplyScalar(1.006);
-      shockwaveMesh.lookAt(new THREE.Vector3(0, 0, 0));
 
-      globeGroup.add(shockwaveMesh);
+      ringColors.forEach((colorHex, idx) => {
+        // Wide high-density rings with glowing additive blending
+        const shockwaveGeom = new THREE.RingGeometry(ringRadius * 0.75, ringRadius * 1.25, 48);
+        const shockwaveMat = new THREE.MeshBasicMaterial({
+          color: colorHex,
+          transparent: true,
+          opacity: 1.0,
+          side: THREE.DoubleSide,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending // Glow integration
+        });
+        const shockwaveMesh = new THREE.Mesh(shockwaveGeom, shockwaveMat);
+        
+        // Stack outward layers minimally so they do not overlap depth buffer-wise
+        shockwaveMesh.position.copy(originVec).multiplyScalar(1.006 + idx * 0.001);
+        shockwaveMesh.lookAt(new THREE.Vector3(0, 0, 0));
 
-      activeShockwaves.push({
-        mesh: shockwaveMesh,
-        progress: 0,
-        origin: originVec,
-        triggeredNodes: new Set<string>()
+        globeGroup.add(shockwaveMesh);
+
+        activeShockwaves.push({
+          mesh: shockwaveMesh,
+          progress: -idx * 0.15, // Staggered start delay via negative initial values
+          origin: originVec,
+          triggeredNodes: new Set<string>()
+        });
       });
+
+      // 2. Generate an energetic starburst of 18 glowing micro particles radiating outward tangentially
+      const particleColors = [0x00f2ff, 0xf97316, 0xec4899, 0xffffff];
+      for (let pIdx = 0; pIdx < 18; pIdx++) {
+        // Octahedron meshes look much cooler than simple boxes!
+        const pGeom = new THREE.OctahedronGeometry(0.012, 0);
+        const pMat = new THREE.MeshBasicMaterial({
+          color: particleColors[pIdx % particleColors.length],
+          transparent: true,
+          opacity: 1.0,
+          blending: THREE.AdditiveBlending
+        });
+        const pMesh = new THREE.Mesh(pGeom, pMat);
+        pMesh.position.copy(originVec).multiplyScalar(1.01);
+        globeGroup.add(pMesh);
+
+        // Compute gorgeous outward surface velocity
+        const randomVec = new THREE.Vector3(
+          Math.random() - 0.5,
+          Math.random() - 0.5,
+          Math.random() - 0.5
+        ).normalize();
+        
+        // Tangent vector projection
+        const tangentVelocity = new THREE.Vector3()
+          .crossVectors(originVec, randomVec)
+          .normalize()
+          .multiplyScalar(0.016 + Math.random() * 0.030);
+
+        // Add minor height ejection
+        const normalVelocity = originVec.clone().normalize().multiplyScalar(0.004 + Math.random() * 0.012);
+        const finalVelocity = tangentVelocity.add(normalVelocity);
+
+        activeParticles.push({
+          mesh: pMesh,
+          velocity: finalVelocity,
+          origin: originVec.clone(),
+          age: 0,
+          maxAge: 45 + Math.floor(Math.random() * 35) // Elegant life time range
+        });
+      }
     };
 
     // Create 3D GREAT-CIRCLE Spline Routes & Packet Animation systems
@@ -849,7 +908,7 @@ export default function SovereignGlobe({
         }
       }
 
-      // 3. Update & Expand Quantum Surface Shockwaves
+      // 3. Update & Expand Quantum Surface Shockwaves - Stagger / Wave Train compatible
       for (let i = activeShockwaves.length - 1; i >= 0; i--) {
         const sw = activeShockwaves[i];
         sw.progress += 0.015;
@@ -858,8 +917,14 @@ export default function SovereignGlobe({
           sw.mesh.geometry.dispose();
           (sw.mesh.material as THREE.Material).dispose();
           activeShockwaves.splice(i, 1);
+        } else if (sw.progress < 0) {
+          // Stay hidden until delayed staggered birth timestamp is reached
+          sw.mesh.visible = false;
         } else {
-          const scl = 1 + sw.progress * 45;
+          sw.mesh.visible = true;
+          // Animate exponential scaling for a premium organic snap effect
+          const snapProgress = Math.pow(sw.progress, 0.7);
+          const scl = 1 + snapProgress * 48;
           sw.mesh.scale.set(scl, scl, 1);
           (sw.mesh.material as THREE.Material).opacity = 1.0 - sw.progress;
 
@@ -891,6 +956,34 @@ export default function SovereignGlobe({
               }
             }
           });
+        }
+      }
+
+      // 3.5. Update and Decay Sparkle Particles
+      for (let i = activeParticles.length - 1; i >= 0; i--) {
+        const p = activeParticles[i];
+        p.age += 1;
+        if (p.age >= p.maxAge) {
+          globeGroup.remove(p.mesh);
+          p.mesh.geometry.dispose();
+          (p.mesh.material as THREE.Material).dispose();
+          activeParticles.splice(i, 1);
+        } else {
+          p.mesh.position.add(p.velocity);
+          
+          // Easing/Friction momentum decline
+          p.velocity.multiplyScalar(0.95);
+          
+          // Twirling/tumbling twirl action
+          p.mesh.rotation.x += 0.06;
+          p.mesh.rotation.y += 0.04;
+
+          const lifeRatio = p.age / p.maxAge;
+          (p.mesh.material as THREE.MeshBasicMaterial).opacity = 1.0 - lifeRatio;
+
+          // Shrink dynamically over time
+          const currentScl = 1.0 - Math.pow(lifeRatio, 1.5) * 0.9;
+          p.mesh.scale.set(currentScl, currentScl, currentScl);
         }
       }
 
@@ -967,11 +1060,16 @@ export default function SovereignGlobe({
       canvas.removeEventListener('touchmove', handleTouchMove);
       canvas.removeEventListener('touchend', handleMouseUpOrLeave);
 
-      // Safely dispose active shockwaves, lasers and satellites
+      // Safely dispose active shockwaves, lasers, particles and satellites
       activeShockwaves.forEach(sw => {
         globeGroup.remove(sw.mesh);
         sw.mesh.geometry.dispose();
         (sw.mesh.material as THREE.Material).dispose();
+      });
+      activeParticles.forEach(p => {
+        globeGroup.remove(p.mesh);
+        p.mesh.geometry.dispose();
+        (p.mesh.material as THREE.Material).dispose();
       });
       activeLasers.forEach(laser => {
         globeGroup.remove(laser.line);

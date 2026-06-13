@@ -11,26 +11,26 @@
 
 ## 🏛️ Comprehensive Architectural Blueprint
 
-The **SOVR Core Gateway Explorer** is an advanced operational dashboard, ledger audit telemetry terminal, and transaction coordinator engineered to manage the global liquidity parameters of the **SOVR Capital Routing Network**. Designed for high-density setups and real-time operations, this terminal processes state invariants dynamically and provides absolute cryptographic balance transparency to network operators.
+The **SOVR Core Gateway Explorer** is an advanced operational dashboard, ledger audit telemetry terminal, system coordinator, and compliance suite engineered to manage the global liquidity parameters of the **SOVR Capital Routing Network**. Designed for high-density setups, real-time operations, and international regulatory compliance, this terminal processes double-entry ledger state invariants dynamically and provides absolute cryptographic balance transparency to network operators.
 
 ```
 +-------------------------------------------------------------------------+
 |                        SOVR WEB OPERATOR PORTAL                         |
 +-------------------------------------------------------------------------+
-                                     │
-      ┌──────────────────────────────┼──────────────────────────────┐
-      ▼                              ▼                              ▼
+                                      │
+       ┌──────────────────────────────┼──────────────────────────────┐
+       ▼                              ▼                              ▼
 +───────────+                  +───────────+                  +───────────+
-| 3D GLOBE  |                  | JOURNAL   |                  | INTEGRATE |
-| REGULATORY|                  | INVARIANT |                  | WEBHOOK   |
-| TELEMETRY |                  | AUDITOR   |                  | GATEWAYS  |
+| 3D GLOBE  |                  | JOURNAL   |                  | REGULATORY|
+| REGULATORY|                  | INVARIANT |                  | COMPLIANCE|
+| TELEMETRY |                  | AUDITOR   |                  | SYSTEMS   |
 +───────────+                  +───────────+                  +───────────+
-      │                              │                              │
-      │   ┌──────────────────────────┘                              │
-      ▼   ▼                                                         ▼
-[ Ledger Ledger Engine (seed.ts) ]  ◄───────────────────  [ Webhook Router ]
-      │
-      ▼
+       │                              │                              │
+       │   ┌──────────────────────────┘                              │
+       ▼   ▼                                                         ▼
+[ Ledger Engine (seed.ts) ]  ◄──────────────────────────────────  [ Webhook Router ]
+       │
+       ▼
 [ SHA-256 Proof Sealer (sha256.ts) ]
 ```
 
@@ -54,10 +54,27 @@ The **SOVR Core Gateway Explorer** is an advanced operational dashboard, ledger 
 
 ### 4. **Quantum Entropy Oscilloscope**
 * **Interactive Waveform Canvas**: Draws triple-layered vector waves showing continuous noise streams. Mimics hardware telemetry feeds generating cryptographically safe nonces.
-* **State Coherence & Superposition Collapse**: Includes triggers simulating quantum collapsing. When triggered, are instantly converted into precise binary eigenstates (`|0⟩` or `|1⟩`) with realistic harmonic decay models.
+* **State Coherence & Superposition Collapse**: Includes triggers simulating quantum collapsing. When triggered, waves are instantly converted into precise binary eigenstates (`|0⟩` or `|1⟩`) with realistic harmonic decay models.
 
 ### 5. **Immutable Cryptographic Block Timeline**
 * **Merkle Block Log**: Chronicles immutable block sequence seals validated via peer quorum. Exposes internal cryptographic invariants including hashes, difficulty indexes, payload lengths, and parent node verification keys.
+
+### 6. **SOVR Development Holdings LLC Regulatory Compliance Hub** [NEWLY EXPANDED]
+A high-fidelity compliance simulator modeled after SOVR Development Holdings LLC's enterprise corporate guidelines. It establishes robust compliance verification pipelines by mapping transactions to SOVR master ledgers:
+* **F0901 Account Master Playbook**: 
+  - Dynamic input formatter parsing raw account coordinates using period-point (`.`) separators. Evaluates four standard legacy representations: Standard (`BU.OBJ.SUB`), Third G/L alternate, Short UUID keys, and automated Speed Codes.
+  - Interactive reorganization sweeps simulating automated mainframe restructurings of index points with custom execution logs.
+  - **Enhanced Subledger Analysis (ESA)** workspace filtering records by subledger types (`A` for address books, `N` for numeric classifications, `C` for customer/payee registries) mapping against `F0101` and `F1201` master tables.
+* **Journal proofing (P09301)**: Generates matrix print schedules for unposted general journals, batch sequences (F0011), and categorized accounts, compiling absolute byte sums on demand.
+* **Trial Balance Audits (P09410 Series)**: Dynamic balances aggregated from active ledger rows to render *Business Unit Sequences (P09410)* or *Object Account Sequences (P094121)* with net debit/credit sums.
+* **Statutory GAAP Closeouts (P10111)**: Income statement compiler calculating active Operating Revenue, COGS, gross margins, administrative OpEx, and final operating income. Paired with a Statement of Cash Flow Closing checklist tracking date patterns (F0008) and Automatic Accounting Instructions (AAI).
+* **Ledger Stress Integrity validation (F0911)**: Runs deep integrity scans verifying transaction detail records (`F0911`) against balance summaries (`F0902`) to highlight exceptions. Includes an *Ampersand Audit Policy* (&) routing resolver.
+
+### 7. **Operations Print Desk & Document Export Bureau** [NEW]
+A centralized system print overlay designed to mimic a vintage matrix-layout layout, giving operators access to fast hardcopy generation:
+* **Print Hardcopy**: Deploys a customized print CSS overlay rendering standard monospace reports with custom border styles directly to physical paper channels, leaving zero background noise.
+* **Download TXT**: Generates dynamic plain text files formatted with strict report headers downloaded on the operator's machine.
+* **Copy Plain Text**: High-speed copying utility for rapid ledger transfers.
 
 ---
 
@@ -65,9 +82,9 @@ The **SOVR Core Gateway Explorer** is an advanced operational dashboard, ledger 
 
 The repository is divided into highly specialized, isolated directories. Each folder contains its own specialized developer documentation:
 
-* **[`/src/components`](/src/components)**: Dynamic React modules, UI controllers, Three.js shaders, and user input validation forms.
-* **[`/src/data`](/src/data)**: Static GAAP charts of accounts, initial balance seeding vectors, and currency localization formatting schemas.
-* **[`/src/utils`](/src/utils)**: Pure TypeScript cryptographic libraries, binary helpers, and mathematical layout formatters.
+* **[`/src/components`](/src/components)**: Dynamic React modules, UI controllers, Three.js shaders, vintage printing overlays, and user input validation forms.
+* **[`/src/data`](/src/data)**: Static GAAP charts of accounts, initial balance seeding vectors, SOVR structural ledger mappings, and currency localization formatting schemas.
+* **[`/src/utils`](/src/utils)**: Pure TypeScript cryptographic libraries, binary helpers (including pure bitwise SHA-256 transforms), and mathematical layout formatters.
 
 ---
 
@@ -81,6 +98,7 @@ The repository is divided into highly specialized, isolated directories. Each fo
 | **AccountsList** | `src/components/AccountsList.tsx` | Searchable chart of accounts showing sub-units balances and GAAP types. | `accounts: LedgerAccount[]` |
 | **ConnectedAppsList**| `src/components/ConnectedAppsList.tsx`| Exposes linked microservices, bridge routers, and automated compliance logs.| *Standalone State (Internal Sim)* |
 | **QuantumEntropyOscilloscope**| `src/components/QuantumEntropyOscilloscope.tsx`| Custom 2D canvas plotting entropic waves and superposition collapse states.| *Standalone State (Internal Canvas Loop)* |
+| **ComplianceHub** | `src/components/ComplianceHub.tsx` | SOVR Development Holdings LLC compliance center: Playbooks, Journal proof compilers, Trial Balance sheets, GAAP closings, ledger scanners, and Print desk overlay. | `accounts: LedgerAccount[]`<br>`transactions: Transaction[]`<br>`formatCurrency: (amountMinor: number, currency: string) => string` |
 
 ---
 
@@ -135,7 +153,7 @@ The project leverages an automated **GitHub Actions** pipeline located in [`.git
    [ Bundle Production Build (vite build) ]
                │
                ▼
-[ Deploy Static Assets directly to GitHub Pages ]
+ [ Deploy Static Assets directly to GitHub Pages ]
 ```
 
 ---
