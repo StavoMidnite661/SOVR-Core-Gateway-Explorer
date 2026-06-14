@@ -18,6 +18,7 @@ import {
   Building2,
   Briefcase
 } from 'lucide-react';
+import backgroundMap from '../assets/images/sovr_background_map_1781167617436.png';
 
 interface SOVRLandingProps {
   onEnter: () => void;
@@ -317,7 +318,7 @@ export default function SovereignLanding({ onEnter, totalAssetsUSD, totalSVT }: 
       {/* Background oversized blueprint map */}
       <div className="absolute inset-0 z-0 overflow-hidden select-none pointer-events-none opacity-25 mix-blend-screen scale-110">
         <img 
-          src="/src/assets/images/sovr_background_map_1781167617436.png" 
+          src={backgroundMap} 
           alt="SOVR Terminal Blueprint Map" 
           className="w-full h-full object-cover select-none pointer-events-none opacity-30 blur-[0.2px]"
           referrerPolicy="no-referrer"
