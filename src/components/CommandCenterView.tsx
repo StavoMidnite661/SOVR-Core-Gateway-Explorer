@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Globe, Radio, Activity, Cpu, Database, ShieldCheck, AlertTriangle, 
-  TrendingUp, X, Play, Pause, Search, Clock, ArrowUpRight, 
-  Terminal, BarChart2, ShieldAlert, Cpu as CoreCpu, Layers, AlertCircle, CheckCircle
+  Globe, Radio, Activity, Cpu, Database, ShieldCheck,
+  TrendingUp, X, Search,
+  ShieldAlert, AlertCircle, CheckCircle
 } from 'lucide-react';
-import { Transaction, LedgerAccount } from '../types';
+import { Transaction, LedgerAccount, GeoNode, Route } from '../types';
 import SovereignGlobe from './SovereignGlobe';
 import QuantumEntropyOscilloscope from './QuantumEntropyOscilloscope';
 import ComplianceHub from './ComplianceHub';
@@ -18,40 +18,17 @@ interface CommandCenterViewProps {
   transactions: Transaction[];
   formatCurrency: (amount: number, denom: string) => string;
   accounts: LedgerAccount[];
-}
-
-interface GeoNode {
-  id: string;
-  name: string;
-  role: string;
-  region: string;
-  lat: number;
-  lon: number;
-  status: 'ONLINE' | 'WARNING' | 'DEGRADED';
-  latency: number;
-  cpu: number;
-  ram: number;
-  disk: number;
-  workers: number;
-  txnsProcessed: number;
-  settlementValue: string;
-  lastSeal: string;
-  lastConsensus: string;
-  softwareVersion: string;
-  trustScore: string;
-}
-
-interface Route {
-  id: string;
-  fromId: string;
-  toId: string;
-  avgTps: number;
-  volume: string;
-  latency: number;
-  successRate: number;
-  drift: number;
-  loss: number;
-  consensus: string;
+  pulseCount: number;
+  pendingVerifications: number;
+  timelineEvents: any[];
+  ingestionItems: any[];
+  agents: any[];
+  anomalies: any[];
+  geoNodes: GeoNode[];
+  routes: Route[];
+  currentBlockHeight: number;
+  onTriggerAnomaly: () => void;
+  onDismissAnomaly: (id: string) => void;
 }
 
 export default function CommandCenterView({
@@ -61,7 +38,18 @@ export default function CommandCenterView({
   p99LatencyMs,
   transactions,
   formatCurrency,
-  accounts
+  accounts,
+  pulseCount,
+  pendingVerifications,
+  timelineEvents,
+  ingestionItems,
+  agents,
+  anomalies,
+  geoNodes,
+  routes,
+  currentBlockHeight,
+  onTriggerAnomaly,
+  onDismissAnomaly
 }: CommandCenterViewProps) {
   // Modes: 'network' | 'treasury' | 'consensus' | 'ingestion' | 'agents' | 'forensics' | 'compliance'
   const [activeMode, setActiveMode] = useState<'network' | 'treasury' | 'consensus' | 'ingestion' | 'agents' | 'forensics' | 'compliance'>('network');
@@ -71,338 +59,15 @@ export default function CommandCenterView({
   const [logSearchQuery, setLogSearchQuery] = useState<string>('');
   const [logFilter, setLogFilter] = useState<string>('ALL');
   
-  // Real-time metrics that tick up/fluctuate
-  const [currentBlock, setCurrentBlock] = useState<number>(7421);
-  const [pendingVerifications, setPendingVerifications] = useState<number>(3);
-  const [pulseCount, setPulseCount] = useState<number>(0);
-
   // SECURE OPERATOR TRACE TERMINAL STATES
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
   const [terminalTyping, setTerminalTyping] = useState<boolean>(false);
-
-  // Simulation data
-  const geoNodes: GeoNode[] = useMemo(() => [
-    {
-      id: 'NY_LC',
-      name: 'NY Ledger Core',
-      role: 'Ledger Settlement Host',
-      region: 'North America',
-      lat: 40.7128,
-      lon: -74.0060,
-      status: 'ONLINE',
-      latency: 12,
-      cpu: 24,
-      ram: 42,
-      disk: 68,
-      workers: 1522,
-      txnsProcessed: 1824552,
-      settlementValue: '$84.3M',
-      lastSeal: `blk_${currentBlock - 3}`,
-      lastConsensus: '0.8 sec ago',
-      softwareVersion: 'v5.9.2',
-      trustScore: '99.998%'
-    },
-    {
-      id: 'LDN_R',
-      name: 'London Routing',
-      role: 'Consensus Coordinator',
-      region: 'Western Europe',
-      lat: 51.5072,
-      lon: -0.1276,
-      status: 'ONLINE',
-      latency: 15,
-      cpu: 18,
-      ram: 37,
-      disk: 52,
-      workers: 1140,
-      txnsProcessed: 1420550,
-      settlementValue: '$65.1M',
-      lastSeal: `blk_${currentBlock - 1}`,
-      lastConsensus: '1.1 sec ago',
-      softwareVersion: 'v5.9.2',
-      trustScore: '100% NOM'
-    },
-    {
-      id: 'ZRH_T',
-      name: 'Zurich Treasury',
-      role: 'SOVR Vault Agent',
-      region: 'Central Europe',
-      lat: 47.3769,
-      lon: 8.5417,
-      status: 'ONLINE',
-      latency: 16,
-      cpu: 31,
-      ram: 50,
-      disk: 61,
-      workers: 920,
-      txnsProcessed: 981440,
-      settlementValue: '$112.4M',
-      lastSeal: `blk_${currentBlock - 2}`,
-      lastConsensus: '0.9 sec ago',
-      softwareVersion: 'v5.9.1',
-      trustScore: '99.999%'
-    },
-    {
-      id: 'SGP_G',
-      name: 'Singapore Gate',
-      role: 'Asynchronous Gateway',
-      region: 'Southeast Asia',
-      lat: 1.3521,
-      lon: 103.8198,
-      status: 'ONLINE',
-      latency: 32,
-      cpu: 48,
-      ram: 58,
-      disk: 74,
-      workers: 2150,
-      txnsProcessed: 2891460,
-      settlementValue: '$144.8M',
-      lastSeal: `blk_${currentBlock}`,
-      lastConsensus: '1.4 sec ago',
-      softwareVersion: 'v5.9.2',
-      trustScore: '99.997%'
-    },
-    {
-      id: 'TYO_C',
-      name: 'Tokyo Consensus',
-      role: 'Witness Notary Node',
-      region: 'East Asia',
-      lat: 35.6762,
-      lon: 139.6503,
-      status: 'ONLINE',
-      latency: 41,
-      cpu: 14,
-      ram: 29,
-      disk: 44,
-      workers: 840,
-      txnsProcessed: 1102900,
-      settlementValue: '$48.2M',
-      lastSeal: `blk_${currentBlock - 1}`,
-      lastConsensus: '1.2 sec ago',
-      softwareVersion: 'v5.9.2',
-      trustScore: '100.00%'
-    },
-    {
-      id: 'DXB_T',
-      name: 'Dubai Treasury',
-      role: 'Liquidity Oracle Host',
-      region: 'Middle East',
-      lat: 25.2048,
-      lon: 55.2708,
-      status: 'ONLINE',
-      latency: 22,
-      cpu: 27,
-      ram: 45,
-      disk: 59,
-      workers: 1180,
-      txnsProcessed: 1530200,
-      settlementValue: '$96.5M',
-      lastSeal: `blk_${currentBlock - 4}`,
-      lastConsensus: '1.7 sec ago',
-      softwareVersion: 'v5.9.0',
-      trustScore: '99.995%'
-    },
-    {
-      id: 'SYD_S',
-      name: 'Sydney Settlement',
-      role: 'Settlement Liquidator',
-      region: 'Oceania',
-      lat: -33.8688,
-      lon: 151.2093,
-      status: 'ONLINE',
-      latency: 82,
-      cpu: 19,
-      ram: 36,
-      disk: 48,
-      workers: 610,
-      txnsProcessed: 591320,
-      settlementValue: '$21.9M',
-      lastSeal: `blk_${currentBlock - 1}`,
-      lastConsensus: '2.1 sec ago',
-      softwareVersion: 'v5.9.1',
-      trustScore: '100% NOM'
-    },
-    {
-      id: 'SAO_L',
-      name: 'São Paulo Liquidity',
-      role: 'Asset Pool Custodian',
-      region: 'South America',
-      lat: -23.5505,
-      lon: -46.6333,
-      status: 'WARNING',
-      latency: 94,
-      cpu: 82,
-      ram: 79,
-      disk: 88,
-      workers: 1320,
-      txnsProcessed: 1205300,
-      settlementValue: '$39.2M',
-      lastSeal: `blk_${currentBlock - 2}`,
-      lastConsensus: '2.5 sec ago',
-      softwareVersion: 'v5.9.2',
-      trustScore: '98.423%'
-    },
-    {
-      id: 'YTO_V',
-      name: 'Toronto Validator',
-      role: 'Integrity Verifier Client',
-      region: 'North America',
-      lat: 43.6532,
-      lon: -79.3832,
-      status: 'ONLINE',
-      latency: 18,
-      cpu: 21,
-      ram: 40,
-      disk: 51,
-      workers: 740,
-      txnsProcessed: 914550,
-      settlementValue: '$34.0M',
-      lastSeal: `blk_${currentBlock - 1}`,
-      lastConsensus: '0.9 sec ago',
-      softwareVersion: 'v5.9.2',
-      trustScore: '99.999%'
-    },
-    {
-      id: 'FRA_R',
-      name: 'Frankfurt Reserve',
-      role: 'Reserve Yield Oracle',
-      region: 'Western Europe',
-      lat: 50.1109,
-      lon: 8.6821,
-      status: 'ONLINE',
-      latency: 14,
-      cpu: 25,
-      ram: 44,
-      disk: 55,
-      workers: 1050,
-      txnsProcessed: 1311450,
-      settlementValue: '$57.8M',
-      lastSeal: `blk_${currentBlock - 5}`,
-      lastConsensus: '1.0 sec ago',
-      softwareVersion: 'v5.9.2',
-      trustScore: '100% NOM'
-    }
-  ], [currentBlock]);
-
-  const routes: Route[] = useMemo(() => [
-    { id: 'R1', fromId: 'LDN_R', toId: 'SGP_G', avgTps: 162, volume: '$4.8M', latency: 14, successRate: 99.97, drift: 0.002, loss: 0.00, consensus: 'Verified' },
-    { id: 'R2', fromId: 'NY_LC', toId: 'LDN_R', avgTps: 245, volume: '$12.4M', latency: 8, successRate: 100.0, drift: 0.000, loss: 0.00, consensus: 'Verified' },
-    { id: 'R3', fromId: 'ZRH_T', toId: 'FRA_R', avgTps: 98, volume: '$16.2M', latency: 3, successRate: 99.99, drift: 0.001, loss: 0.00, consensus: 'Verified' },
-    { id: 'R4', fromId: 'DXB_T', toId: 'TYO_C', avgTps: 110, volume: '$5.1M', latency: 28, successRate: 99.95, drift: 0.004, loss: 0.01, consensus: 'Verified' },
-    { id: 'R5', fromId: 'SGP_G', toId: 'SYD_S', avgTps: 76, volume: '$3.5M', latency: 42, successRate: 99.98, drift: 0.003, loss: 0.00, consensus: 'Verified' },
-    { id: 'R6', fromId: 'SAO_L', toId: 'NY_LC', avgTps: 120, volume: '$2.9M', latency: 86, successRate: 99.85, drift: 0.015, loss: 0.04, consensus: 'Warning_Sync' },
-    { id: 'R7', fromId: 'YTO_V', toId: 'FRA_R', avgTps: 85, volume: '$1.8M', latency: 38, successRate: 99.99, drift: 0.001, loss: 0.00, consensus: 'Verified' },
-    { id: 'R8', fromId: 'DXB_T', toId: 'SGP_G', avgTps: 190, volume: '$9.2M', latency: 19, successRate: 100.0, drift: 0.001, loss: 0.00, consensus: 'Verified' }
-  ], []);
 
   // Set up selected elements lists
   const selectedNode = useMemo(() => geoNodes.find(n => n.id === selectedNodeId) || geoNodes[0], [selectedNodeId, geoNodes]);
   const selectedRoute = useMemo(() => routes.find(r => r.id === selectedRouteId) || null, [selectedRouteId, routes]);
 
-  // Dynamic system logs stream with specific categories
-  const [timelineEvents, setTimelineEvents] = useState<Array<{ id: string; time: string; msg: string; type: 'CONSENSUS' | 'TREASURY' | 'INGEST' | 'COMMIT' | 'ANOMALY' }>>([
-    { id: 'ev_1', time: '02:44:11', msg: 'System blockchain seal blk_7420 finalized (100% approval rate)', type: 'CONSENSUS' },
-    { id: 'ev_2', time: '02:44:05', msg: 'SGP_G requested asynchronous yield escrow adjustments [+$4,500,000 SVT]', type: 'TREASURY' },
-    { id: 'ev_3', time: '02:43:52', msg: 'Stripe webhook Ingest: payload balance allocation for operating expenses', type: 'INGEST' },
-    { id: 'ev_4', time: '02:43:40', msg: 'Node Frankfurt Reserve matched regulatory verification state parameters', type: 'COMMIT' },
-    { id: 'ev_5', time: '02:43:12', msg: 'Slight congestion wave flagged from São Paulo Liquidity node (latency > 100ms)', type: 'ANOMALY' },
-    { id: 'ev_6', time: '02:42:50', msg: 'Coinbase core vault bridge re-allocated holding reserves to Escrow accounts', type: 'TREASURY' },
-    { id: 'ev_7', time: '02:42:15', msg: 'Authority validation chain synchronized globally', type: 'CONSENSUS' }
-  ]);
-
-  // Real-time API Ingestion simulation items
-  const [ingestionItems, setIngestionItems] = useState([
-    { name: 'Stripe Pay', rate: 142, queue: 0, status: 'NOMINAL', lastSync: '100ms ago' },
-    { name: 'Visa Direct', rate: 285, queue: 1, status: 'NOMINAL', lastSync: '220ms ago' },
-    { name: 'Mastercard Gate', rate: 195, queue: 0, status: 'NOMINAL', lastSync: '500ms ago' },
-    { name: 'FedNow Router', rate: 64, queue: 0, status: 'NOMINAL', lastSync: '120ms ago' },
-    { name: 'ACH Terminal', rate: 12, queue: 0, status: 'NOMINAL', lastSync: '2.1s ago' },
-    { name: 'Bank Wire Ingress', rate: 4, queue: 0, status: 'NOMINAL', lastSync: '4.5s ago' },
-    { name: 'Coinbase Ledger', rate: 45, queue: 0, status: 'NOMINAL', lastSync: '240ms ago' },
-    { name: 'Treasury Ops Feed', rate: 3, queue: 1, status: 'NOMINAL', lastSync: '500ms ago' },
-    { name: 'Vendor Oracle Bridge', rate: 8, queue: 0, status: 'NOMINAL', lastSync: '1.2s ago' },
-    { name: 'Audit Witness Node', rate: 1, queue: 0, status: 'NOMINAL', lastSync: '1s ago' }
-  ]);
-
-  // Autonomous System Agents state
-  const [agents, setAgents] = useState([
-    { name: 'Settlement Agent', status: 'ACTIVE', task: 'Polling client deposit nodes...', cpu: '1.2%', action: 'Verified invoice audit balance', score: '99.99%', logs: ['02:44:19 - Pushed lock state to NY Core', '02:44:02 - Loaded minor state balances'] },
-    { name: 'Treasury Agent', status: 'ONLINE', task: 'Balancing multi-pool reserve weights...', cpu: '0.8%', action: 'Rebalanced Zurich escrow margin', score: '99.98%', logs: ['02:43:58 - Detected SVT transfer request', '02:43:10 - Released surplus pool reserve'] },
-    { name: 'Risk Agent', status: 'ONLINE', task: 'Scanning for double-entry drift issues...', cpu: '2.5%', action: 'Calculated zero ledger variance', score: '100.0%', logs: ['02:44:11 - Completed general matrix check', '02:44:00 - Solved balance linear bounds'] },
-    { name: 'Audit Agent', status: 'IDLE', task: 'Awaiting block Merkle leaf seal approval...', cpu: '0.1%', action: 'Verified blk_7420 digest signatures', score: '99.99%', logs: ['02:43:44 - Saved verified Block Merkle root', '02:43:12 - Handshake verified with Singapore'] },
-    { name: 'Routing Agent', status: 'ACTIVE', task: 'Measuring continental round-trip p99 jitter...', cpu: '1.4%', action: 'Optimized Dublin-to-Singapore paths', score: '99.95%', logs: ['02:44:18 - Latency recalculation passed', '02:44:05 - Re-routed SP pool to NY server'] },
-    { name: 'Witness Agent', status: 'ONLINE', task: 'Signing validated epoch hashes...', cpu: '0.7%', action: 'Generated cryptographic witness certification', score: '100.0%', logs: ['02:44:12 - Signed block verification pack #7420', '02:44:00 - Quorum validated 6/6 signers'] },
-    { name: 'Oracle Agent', status: 'ACTIVE', task: 'Evaluating asset margin exchanges...', cpu: '1.1%', action: 'Fetched USD-to-SVT parity index from API', score: '99.97%', logs: ['02:44:15 - Updated external price parity delta', '02:43:50 - Read external vendor pool data'] },
-    { name: 'Compliance Agent', status: 'ONLINE', task: 'Auditing dynamic KYC validation limits...', cpu: '0.4%', action: 'Completed continuous compliance verification', score: '99.99%', logs: ['02:44:10 - Checked high-volume limit triggers', '02:43:02 - Clean sweep of AML boundary logs'] }
-  ]);
   const [selectedAgentIndex, setSelectedAgentIndex] = useState<number>(0);
-
-  // Active Network Anomaly checklist
-  const [anomalies, setAnomalies] = useState([
-    { id: 'an_1', text: 'São Paulo node latency spike (94ms / average 35ms)', severe: false, dismissed: false },
-    { id: 'an_2', text: 'Drift correction threshold evaluation in-progress', severe: false, dismissed: false },
-    { id: 'an_3', text: 'Automatic redundancy path fallback active between YTO and FRA', severe: false, dismissed: false }
-  ]);
-
-  // Handle ticking up block heights, transaction figures, and appending new flow simulations
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setPulseCount(p => p + 1);
-
-      // Increment block height occasionally
-      const r = Math.random();
-      if (r > 0.85) {
-        setCurrentBlock(b => b + 1);
-        setPendingVerifications(Math.floor(Math.random() * 4) + 1);
-        
-        // Add new consensus log
-        const timestamp = new Date().toTimeString().split(' ')[0];
-        setTimelineEvents(prev => [
-          { 
-            id: `ev_${Date.now()}_con_${Math.floor(Math.random() * 10000)}`, 
-            time: timestamp, 
-            msg: `New cryptographic block state #7421 authority seal produced successfully.`, 
-            type: 'CONSENSUS' 
-          },
-          ...prev.slice(0, 10)
-        ]);
-      }
-
-      // Slightly fluctuate metrics
-      setIngestionItems(prev => prev.map(item => ({
-        ...item,
-        rate: Math.max(item.rate + (Math.random() > 0.5 ? 1 : -1) * Math.floor(Math.random() * 8), 1),
-        queue: Math.random() > 0.9 ? Math.floor(Math.random() * 3) : 0
-      })));
-
-      // Occasional new timeline event
-      if (Math.random() > 0.7 && transactions.length > 0) {
-        const tIdx = Math.floor(Math.random() * transactions.length);
-        const randTx = transactions[tIdx];
-        const timestamp = new Date().toTimeString().split(' ')[0];
-        const types: Array<'TREASURY' | 'INGEST' | 'COMMIT' | 'ANOMALY'> = ['TREASURY', 'INGEST', 'COMMIT', 'ANOMALY'];
-        const selectedType = types[Math.floor(Math.random() * types.length)];
-        
-        let customMsg = `Routed transactional packet [${formatCurrency(randTx.amountMinor, randTx.denomination)}] via ${randTx.rail.toUpperCase()}`;
-        if (selectedType === 'COMMIT') {
-          customMsg = `Committed double-entry algebraic state proof for balance [${formatCurrency(randTx.amountMinor, randTx.denomination)}]`;
-        }
-
-        setTimelineEvents(prev => [
-          {
-            id: `ev_${Date.now()}_txn_${Math.floor(Math.random() * 10000)}`,
-            time: timestamp,
-            msg: customMsg,
-            type: selectedType
-          },
-          ...prev.slice(0, 15)
-        ]);
-      }
-
-    }, 3500);
-
-    return () => clearInterval(timer);
-  }, [transactions, formatCurrency]);
 
   // Typing operator terminal trace effect on node selection
   useEffect(() => {
@@ -439,24 +104,14 @@ export default function CommandCenterView({
     return () => {
       clearInterval(interval);
     };
-  }, [selectedNodeId]);
+  }, [selectedNodeId, selectedNode]);
 
   const handleTriggerAnomalySimulation = () => {
-    const alerts = [
-      'Federal Reserve FedNow packet payload handshake pending retry',
-      'Memory pool expansion limit reaching 85% capacity on Singapore Gate node',
-      'API webhook ping timeout detected on Uniswap liquidity tracking Oracle',
-      'Automatic block verification witness #11 delay warning: sync threshold drift alert'
-    ];
-    const alertText = alerts[Math.floor(Math.random() * alerts.length)];
-    setAnomalies(prev => [
-      { id: `an_${Date.now()}_${Math.floor(Math.random() * 10000)}`, text: alertText, severe: Math.random() > 0.5, dismissed: false },
-      ...prev
-    ]);
+    onTriggerAnomaly();
   };
 
   const handleDismissAnomaly = (id: string) => {
-    setAnomalies(prev => prev.map(an => an.id === id ? { ...an, dismissed: true } : an));
+    onDismissAnomaly(id);
   };
 
   // Filter logs based on search query/type selection
@@ -695,7 +350,7 @@ export default function CommandCenterView({
                   </div>
                   <div className="bg-[#050507] border border-[#2a2a35] p-2.5 rounded-sm text-center">
                     <span className="text-white/30 text-[8.5px] uppercase tracking-wider block">Active Block Height</span>
-                    <span className="text-lg font-bold text-white font-mono block mt-1">#{currentBlock}</span>
+                    <span className="text-lg font-bold text-white font-mono block mt-1">#{currentBlockHeight}</span>
                     <span className="text-[7.5px] text-white/20 uppercase font-bold tracking-widest">Real-time dynamic chain</span>
                   </div>
                 </div>
@@ -792,38 +447,42 @@ export default function CommandCenterView({
 
                 {/* Right detailed expanded logs view */}
                 <div className="md:col-span-2 bg-[#050507] border border-[#2a2a35] rounded p-3 flex flex-col justify-between font-mono text-[10px]">
-                  <div>
-                    <div className="flex justify-between border-b border-[#2a2a35]/60 pb-1 mb-2">
-                      <span className="font-bold text-white">{agents[selectedAgentIndex].name}</span>
-                      <span className="text-[#02c39a] font-bold uppercase text-[9px]">{agents[selectedAgentIndex].status} STATE</span>
-                    </div>
+                  {agents[selectedAgentIndex] && (
+                    <>
+                      <div>
+                        <div className="flex justify-between border-b border-[#2a2a35]/60 pb-1 mb-2">
+                          <span className="font-bold text-white">{agents[selectedAgentIndex].name}</span>
+                          <span className="text-[#02c39a] font-bold uppercase text-[9px]">{agents[selectedAgentIndex].status} STATE</span>
+                        </div>
 
-                    <div className="space-y-1.5 text-[9.5px]">
-                      <div className="flex justify-between">
-                        <span className="text-white/40">Current Task:</span>
-                        <span className="text-white/85">{agents[selectedAgentIndex].task}</span>
+                        <div className="space-y-1.5 text-[9.5px]">
+                          <div className="flex justify-between">
+                            <span className="text-white/40">Current Task:</span>
+                            <span className="text-white/85">{agents[selectedAgentIndex].task}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-white/40">Allocated CPU Power:</span>
+                            <span className="text-[#02c39a] font-bold">{agents[selectedAgentIndex].cpu} Core Limit</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-white/40">Task Confidence Accuracy:</span>
+                            <span className="text-amber-400 font-bold">{agents[selectedAgentIndex].score} Matching Confidence</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-white/40">Latest Action Output:</span>
+                            <span className="text-white font-semibold truncate block max-w-[170px]">{agents[selectedAgentIndex].action}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/40">Allocated CPU Power:</span>
-                        <span className="text-[#02c39a] font-bold">{agents[selectedAgentIndex].cpu} Core Limit</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/40">Task Confidence Accuracy:</span>
-                        <span className="text-amber-400 font-bold">{agents[selectedAgentIndex].score} Matching Confidence</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-white/40">Latest Action Output:</span>
-                        <span className="text-white font-semibold truncate block max-w-[170px]">{agents[selectedAgentIndex].action}</span>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="mt-3 bg-[#08080c] border border-white/5 p-2 rounded-sm text-[8px] space-y-1">
-                    <span className="text-white/35 uppercase text-[7px] font-bold tracking-widest block">Agent Stream Outputs</span>
-                    {agents[selectedAgentIndex].logs.map((log, lIdx) => (
-                      <div key={lIdx} className="text-white/60 truncate font-mono">{log}</div>
-                    ))}
-                  </div>
+                      <div className="mt-3 bg-[#08080c] border border-white/5 p-2 rounded-sm text-[8px] space-y-1">
+                        <span className="text-white/35 uppercase text-[7px] font-bold tracking-widest block">Agent Stream Outputs</span>
+                        {agents[selectedAgentIndex].logs.map((log: string, lIdx: number) => (
+                          <div key={lIdx} className="text-white/60 truncate font-mono">{log}</div>
+                        ))}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 

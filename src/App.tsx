@@ -73,51 +73,31 @@ export default function App() {
   }, []);
 
   // States
-  const [accounts, setAccounts] = useState<LedgerAccount[]>(() => [...INITIAL_ACCOUNTS]);
-  const [apps, setApps] = useState<ConnectedApp[]>(() => [...INITIAL_APPS]);
-  const [chain, setChain] = useState<HashBlock[]>(() => {
-    const list: HashBlock[] = [];
-    let prev = "0".repeat(64);
-    for (let h = 0; h < 24; h++) {
-      const merkle = sha256(`merkle-${h}-${generateUUIDShort()}`);
-      const blockHash = sha256(`${h}-${prev}-${merkle}`);
-      list.push({
-        id: `blk_${h}`,
-        height: h,
-        hash: blockHash,
-        prevHash: prev,
-        txnCount: Math.floor(Math.random() * (42 - 8 + 1)) + 8,
-        merkleRoot: merkle,
-        sealedAt: new Date(Date.now() - (24 - h) * 300 * 1000).toISOString(),
-        verified: true
-      });
-      prev = blockHash;
-    }
-    return list.reverse(); // newest block first
+  const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
+  const [apps, setApps] = useState<ConnectedApp[]>([]);
+  const [chain, setChain] = useState<HashBlock[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [volumeSeries, setVolumeSeries] = useState<any[]>([]);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [health, setHealth] = useState<SystemHealth>({
+    ledgerOk: true,
+    chainVerified: true,
+    pendingTxns: 0,
+    p99LatencyMs: 0,
+    nodesOnline: 0,
+    nodesTotal: 0,
+    lastSeal: new Date().toISOString()
   });
 
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    // Generate initial transaction pool
-    const list: Transaction[] = [];
-    let prev = "0".repeat(64);
-    for (let t = 0; t < 14; t++) {
-      const tx = generateRandomTxn(prev, INITIAL_ACCOUNTS);
-      tx.createdAt = new Date(Date.now() - (14 - t) * 120 * 1000).toISOString();
-      list.push(tx);
-      prev = tx.hash;
-    }
-    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  });
-
-  const [volumeSeries, setVolumeSeries] = useState<any[]>(() => 
-    Array.from({ length: 65 }).map((_, idx) => ({
-      tick: idx,
-      settlementVelocity: Math.floor(Math.random() * (78 - 25 + 1)) + 25,
-      treasuryFlow: Math.floor(Math.random() * (460000 - 130000 + 1)) + 130000,
-      networkLoad: Math.floor(Math.random() * (85 - 35 + 1)) + 35,
-      apiThroughput: Math.floor(Math.random() * (1350 - 450 + 1)) + 450
-    }))
-  );
+  // CommandCenter States
+  const [pulseCount, setPulseCount] = useState(0);
+  const [pendingVerifications, setPendingVerifications] = useState(0);
+  const [timelineEvents, setTimelineEvents] = useState<any[]>([]);
+  const [ingestionItems, setIngestionItems] = useState<any[]>([]);
+  const [agents, setAgents] = useState<any[]>([]);
+  const [anomalies, setAnomalies] = useState<any[]>([]);
+  const [geoNodes, setGeoNodes] = useState<any[]>([]);
+  const [routes, setRoutes] = useState<any[]>([]);
 
   const [selectedZoom, setSelectedZoom] = useState<'1m' | '5m' | '15m' | 'all'>('1m');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -125,23 +105,30 @@ export default function App() {
   const [isProofExpanded, setIsProofExpanded] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
 
-  // Simulated notification center logs
-  const [notifications, setNotifications] = useState<any[]>([
-    { id: 1, type: 'API', message: 'Inbound TLS port connection handshaking initialized with SOVRPay Swedish ingress', time: '1 min ago', status: 'info' },
-    { id: 2, type: 'TREASURY', message: 'Large collateral fund transfer of +120,000 SVT completed and matched algebraically', time: '4 mins ago', status: 'warning' },
-    { id: 3, type: 'SYSTEM', message: 'Consensus quorum signed authority seal for ledger height #1428 matches Merkle root', time: '12 mins ago', status: 'success' },
-    { id: 4, type: 'SECURITY', message: 'Scheduled algorithmic invariant check passed across all 6 validator instances', time: '35 mins ago', status: 'success' },
-  ]);
-
-  const [health, setHealth] = useState<SystemHealth>(() => ({
-    ledgerOk: true,
-    chainVerified: true,
-    pendingTxns: 2,
-    p99LatencyMs: 18,
-    nodesOnline: 6,
-    nodesTotal: 6,
-    lastSeal: new Date().toISOString()
-  }));
+  // Fetch state from API
+  const fetchState = async () => {
+    try {
+      const res = await fetch('/api/state');
+      const data = await res.json();
+      setAccounts(data.accounts);
+      setApps(data.apps);
+      setChain(data.chain);
+      setTransactions(data.transactions);
+      setVolumeSeries(data.volumeSeries);
+      setNotifications(data.notifications);
+      setHealth(data.health);
+      setPulseCount(data.pulseCount);
+      setPendingVerifications(data.pendingVerifications);
+      setTimelineEvents(data.timelineEvents);
+      setIngestionItems(data.ingestionItems);
+      setAgents(data.agents);
+      setAnomalies(data.anomalies);
+      setGeoNodes(data.geoNodes);
+      setRoutes(data.routes);
+    } catch (err) {
+      console.error('Failed to fetch state:', err);
+    }
+  };
 
   const [isSealingNow, setIsSealingNow] = useState(false);
 
@@ -163,119 +150,65 @@ export default function App() {
 
   const pendingCount = transactions.filter(txn => txn.state === 'pending').length;
 
-  // Manual block seal trigger
-  const sealBlock = () => {
-    setChain(prevChain => {
-      const latestBlock = prevChain[0];
-      const h = (latestBlock?.height ?? 0) + 1;
-      const prev = latestBlock?.hash ?? "0".repeat(64);
-      const merkle = sha256(`merkle-${h}-${generateUUIDShort()}`);
-      const blockHash = sha256(`${h}-${prev}-${merkle}`);
-
-      const nextBlock: HashBlock = {
-        id: `blk_${h}`,
-        height: h,
-        hash: blockHash,
-        prevHash: prev,
-        txnCount: Math.floor(Math.random() * (42 - 8 + 1)) + 8,
-        merkleRoot: merkle,
-        sealedAt: new Date().toISOString(),
-        verified: true
-      };
-
-      const newChain = [nextBlock, ...prevChain];
-      if (newChain.length > 48) {
-        newChain.pop();
-      }
-      return newChain;
-    });
-
-    setHealth(prev => ({
-      ...prev,
-      lastSeal: new Date().toISOString()
-    }));
+  // POST MANUAL TRANSACTION (via API)
+  const handlePostTransaction = async (params: any) => {
+    try {
+      const res = await fetch('/api/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(params)
+      });
+      if (res.ok) fetchState();
+    } catch (err) {
+      console.error('Failed to post transaction:', err);
+    }
   };
 
-  // POST MANUAL TRANSACTION (Debit / Credit updates)
-  const handlePostTransaction = (params: {
-    debitId: string;
-    creditId: string;
-    amountMinor: number;
-    denomination: Denomination;
-    rail: Rail;
-    memo: string;
-    originApp: string;
-  }) => {
-    const id = `txn_${generateUUIDShort()}`;
-    const latestTx = transactions[0];
-    const prevHash = latestTx?.hash ?? "0".repeat(64);
-    
-    const canonicalStr = `${id}|${params.rail}|${params.amountMinor}|${params.denomination}|${prevHash}`;
-    const txnHash = sha256(canonicalStr);
+  const handleForceSeal = async () => {
+    setIsSealingNow(true);
+    try {
+      await fetch('/api/chain/seal', { method: 'POST' });
+      fetchState();
+    } catch (err) {
+      console.error('Failed to force seal:', err);
+    } finally {
+      setTimeout(() => setIsSealingNow(false), 600);
+    }
+  };
 
-    const debitAccount = accounts.find(a => a.id === params.debitId);
-    const creditAccount = accounts.find(a => a.id === params.creditId);
+  const handleTriggerAnomaly = async () => {
+    try {
+      await fetch('/api/anomalies/trigger', { method: 'POST' });
+      fetchState();
+    } catch (err) {
+      console.error('Failed to trigger anomaly:', err);
+    }
+  };
 
-    if (!debitAccount || !creditAccount) return;
+  const handleDismissAnomaly = async (id: string) => {
+    try {
+      await fetch('/api/anomalies/dismiss', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      fetchState();
+    } catch (err) {
+      console.error('Failed to dismiss anomaly:', err);
+    }
+  };
 
-    const entries = [
-      {
-        id: generateUUIDShort(),
-        accountId: params.debitId,
-        accountCode: debitAccount.code,
-        debitMinor: params.amountMinor,
-        creditMinor: 0
-      },
-      {
-        id: generateUUIDShort(),
-        accountId: params.creditId,
-        accountCode: creditAccount.code,
-        debitMinor: 0,
-        creditMinor: params.amountMinor
-      }
-    ];
-
-    const newTxn: Transaction = {
-      id,
-      hash: txnHash,
-      prevHash,
-      state: 'posted',
-      rail: params.rail,
-      denomination: params.denomination,
-      amountMinor: params.amountMinor,
-      memo: params.memo,
-      originApp: params.originApp,
-      createdAt: new Date().toISOString(),
-      entries
-    };
-
-    // Update LEDGER balances IMMEDIATELY (since it is POSTED)
-    setAccounts(prevAccounts => 
-      prevAccounts.map(account => {
-        let balanceMinor = account.balanceMinor;
-        if (account.id === params.debitId) {
-          balanceMinor += params.amountMinor; // Debit entry algebraic sum
-        }
-        if (account.id === params.creditId) {
-          balanceMinor -= params.amountMinor; // Credit entry algebraic sum
-        }
-        return { ...account, balanceMinor };
-      })
-    );
-
-    setTransactions(prev => [newTxn, ...prev].slice(0, 80));
-    setVolumeSeries(prev => {
-      const lastTick = prev.length ? prev[prev.length - 1].tick : 0;
-      const nextPoint = {
-        tick: lastTick + 1,
-        settlementVelocity: Math.floor(Math.random() * (78 - 25 + 1)) + 25,
-        treasuryFlow: Math.floor(Math.random() * (460000 - 130000 + 1)) + 130000,
-        networkLoad: Math.floor(Math.random() * (85 - 35 + 1)) + 35,
-        apiThroughput: Math.floor(Math.random() * (1350 - 450 + 1)) + 450
-      };
-      const newSeries = [...prev, nextPoint];
-      return newSeries.length > 100 ? newSeries.slice(1) : newSeries;
-    });
+  const handleRegisterApp = async (newApp: any) => {
+    try {
+      const res = await fetch('/api/apps/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newApp)
+      });
+      if (res.ok) fetchState();
+    } catch (err) {
+      console.error('Failed to register app:', err);
+    }
   };
 
   const handleExportLogs = () => {
@@ -295,166 +228,18 @@ export default function App() {
   };
 
 
-  // LIVE SIMULATOR WEBSOCKET GRAPH TICK (Every 1400ms)
+  // LIVE API POLLING (Every 1400ms)
   useEffect(() => {
+    fetchState();
     if (!isConnected) {
       if (tickTimerRef.current) clearInterval(tickTimerRef.current);
       return;
     }
-
-    tickTimerRef.current = setInterval(() => {
-      // 1. Generate live transaction payload and update ledger in sync
-      setAccounts(prevAccounts => {
-        let updatedAccounts = [...prevAccounts];
-
-        setTransactions(prevTxns => {
-          const prevHash = prevTxns[0]?.hash ?? "0".repeat(64);
-          const nextTx = generateRandomTxn(prevHash, prevAccounts);
-
-          // Update general ledger balances if transaction is Posted on boot
-          const freshAccounts = prevAccounts.map(acc => {
-            let balanceMinor = acc.balanceMinor;
-            if (nextTx.state === 'posted') {
-              const debitEntry = nextTx.entries.find(e => e.accountId === acc.id);
-              const creditEntry = nextTx.entries.find(e => e.accountId === acc.id);
-              if (debitEntry) {
-                balanceMinor += debitEntry.debitMinor;
-              }
-              if (creditEntry) {
-                balanceMinor -= creditEntry.creditMinor;
-              }
-            }
-            return { ...acc, balanceMinor };
-          });
-
-          // Occasionally promote an older pending transaction to posted
-          let finalTxnsList = [nextTx, ...prevTxns];
-          if (Math.random() < 0.25) {
-            const pendingIndex = finalTxnsList.findIndex(t => t.state === 'pending');
-            if (pendingIndex !== -1) {
-              const oldPending = finalTxnsList[pendingIndex];
-              const promotedTx: Transaction = {
-                ...oldPending,
-                state: 'posted'
-              };
-              finalTxnsList[pendingIndex] = promotedTx;
-
-              // Apply promoted transaction's debit/credits to finalized ledger state
-              for (let i = 0; i < freshAccounts.length; i++) {
-                const acc = freshAccounts[i];
-                const dEntry = promotedTx.entries.find(e => e.accountId === acc.id);
-                const cEntry = promotedTx.entries.find(e => e.accountId === acc.id);
-                if (dEntry) {
-                  freshAccounts[i].balanceMinor += dEntry.debitMinor;
-                }
-                if (cEntry) {
-                  freshAccounts[i].balanceMinor -= cEntry.creditMinor;
-                }
-              }
-            }
-          }
-
-          // Bound list sizes
-          if (finalTxnsList.length > 80) {
-            finalTxnsList = finalTxnsList.slice(0, 80);
-          }
-
-          updatedAccounts = freshAccounts;
-          return finalTxnsList;
-        });
-
-        return updatedAccounts;
-      });
-
-      // 2. Volume sliding sparkline update
-      setVolumeSeries(prevSeries => {
-        const lastTick = prevSeries.length ? prevSeries[prevSeries.length - 1].tick : 0;
-        const nextPoint = {
-          tick: lastTick + 1,
-          settlementVelocity: Math.floor(Math.random() * (78 - 25 + 1)) + 25,
-          treasuryFlow: Math.floor(Math.random() * (460000 - 130000 + 1)) + 130000,
-          networkLoad: Math.floor(Math.random() * (85 - 35 + 1)) + 35,
-          apiThroughput: Math.floor(Math.random() * (1350 - 450 + 1)) + 450
-        };
-        const newSeries = [...prevSeries, nextPoint];
-        return newSeries.length > 150 ? newSeries.slice(1) : newSeries;
-      });
-
-      // 3. Jitter connected apps session feeds
-      setApps(prevApps => 
-        prevApps.map(app => {
-          const sessionsJitter = Math.floor(Math.random() * (4 - (-3) + 1)) + (-3);
-          const txnJitter = (Math.random() * (1.4 - (-1.2))) + (-1.2);
-          return {
-            ...app,
-            activeSessions: Math.max(0, app.activeSessions + sessionsJitter),
-            txnPerMin: Math.max(0, app.txnPerMin + txnJitter),
-            lastHeartbeat: new Date().toISOString()
-          };
-        })
-      );
-
-      // 4. Sealer automatic trigger (1 in 9 times chance)
-      if (Math.random() < 0.12) {
-        sealBlock();
-      }
-
-      // 5. System Health jitter
-      setHealth(prev => {
-        const latencyJitter = Math.floor(Math.random() * (3 - (-3) + 1)) + (-3);
-        return {
-          ...prev,
-          pendingTxns: pendingCount,
-          p99LatencyMs: Math.max(8, Math.min(140, prev.p99LatencyMs + latencyJitter))
-        };
-      });
-
-      // 6. Dynamic high-fidelity notification center updates
-      if (Math.random() < 0.14) {
-        const categories = ['API', 'TREASURY', 'SYSTEM', 'SECURITY', 'AUDIT'];
-        const randomCat = categories[Math.floor(Math.random() * categories.length)];
-        let msg = '';
-        let status = 'info';
-
-        if (randomCat === 'API') {
-          const apiActions = [
-            'Client credential handshake resolved with Basalt Console Node #1',
-            'SOVR UnifiedPay Hub webhook ingestion queue lag detected: 42ms',
-            'SOVR API channel heartbeats successfully acknowledged from all 6 authorities'
-          ];
-          msg = apiActions[Math.floor(Math.random() * apiActions.length)];
-          status = msg.includes('lag') ? 'warning' : 'success';
-        } else if (randomCat === 'TREASURY') {
-          msg = `Collateralized asset settlement of +${(Math.floor(Math.random() * 85000) + 15000).toLocaleString()} SVT complete; algebraic offset verified`;
-          status = 'info';
-        } else if (randomCat === 'SYSTEM') {
-          msg = `Cryptographic sealer validator block #${Math.floor(Math.random() * 20000 + 12000)} auto-probability consensus attained`;
-          status = 'success';
-        } else {
-          msg = 'Periodic multi-rail double-entry trial balance checked: DEBITS === CREDITS';
-          status = 'success';
-        }
-
-        setNotifications(prev => [
-          { id: Date.now() + Math.random(), type: randomCat, message: msg, time: 'Just now', status },
-          ...prev.slice(0, 15)
-        ]);
-      }
-
-    }, 1400);
-
+    tickTimerRef.current = setInterval(fetchState, 1400);
     return () => {
       if (tickTimerRef.current) clearInterval(tickTimerRef.current);
     };
-  }, [isConnected, pendingCount]);
-
-  const handleForceSeal = () => {
-    setIsSealingNow(true);
-    setTimeout(() => {
-      sealBlock();
-      setIsSealingNow(false);
-    }, 600);
-  };
+  }, [isConnected]);
 
   // Convert pure volume series numbers array into structural recharts dictionary
   const chartData = React.useMemo(() => {
@@ -507,6 +292,14 @@ export default function App() {
           clearNotifications={() => setNotifications([])}
           totalSVT={totalSVT}
           totalAssetsUSD={totalAssetsUSD}
+          pulseCount={pulseCount}
+          pendingVerifications={pendingVerifications}
+          timelineEvents={timelineEvents}
+          ingestionItems={ingestionItems}
+          agents={agents}
+          anomalies={anomalies}
+          geoNodes={geoNodes}
+          routes={routes}
         />
       ) : (
         <motion.div
@@ -945,30 +738,7 @@ export default function App() {
 
             {/* NEW API REGISTRATION PANEL */}
             <RegisterIntegrationForm 
-              onRegister={(newApp) => {
-                const colors = [
-                  'border-cyan-500/30 text-cyan-400 bg-cyan-500/5',
-                  'border-purple-500/30 text-purple-400 bg-purple-500/5',
-                  'border-amber-500/30 text-amber-400 bg-amber-500/5',
-                  'border-emerald-500/30 text-emerald-400 bg-emerald-500/5',
-                  'border-blue-500/30 text-blue-400 bg-blue-500/5'
-                ];
-                setApps(prevApps => [
-                  ...prevApps,
-                  {
-                    id: `app_${generateUUIDShort()}`,
-                    slug: newApp.slug,
-                    displayName: newApp.displayName,
-                    icon: newApp.icon || 'Cpu',
-                    tint: colors[prevApps.length % colors.length],
-                    health: 'healthy',
-                    activeSessions: Number(newApp.activeSessions || 4),
-                    txnPerMin: Number(newApp.txnPerMin || 18.5),
-                    lastHeartbeat: new Date().toISOString(),
-                    version: newApp.version || 'v2.1-stable'
-                  }
-                ]);
-              }}
+              onRegister={handleRegisterApp}
             />
 
           </div>
@@ -1179,6 +949,17 @@ export default function App() {
           transactions={transactions}
           formatCurrency={formatCurrency}
           accounts={accounts}
+          pulseCount={pulseCount}
+          pendingVerifications={pendingVerifications}
+          timelineEvents={timelineEvents}
+          ingestionItems={ingestionItems}
+          agents={agents}
+          anomalies={anomalies}
+          geoNodes={geoNodes}
+          routes={routes}
+          currentBlockHeight={chain[0]?.height || 0}
+          onTriggerAnomaly={handleTriggerAnomaly}
+          onDismissAnomaly={handleDismissAnomaly}
         />
       )}
       {false && isCommandViewActive && (

@@ -72,3 +72,38 @@ export interface SystemHealth {
   nodesTotal: number;
   lastSeal: string; // ISO String
 }
+
+export interface GeoNode {
+  id: string;
+  name: string;
+  role: string;
+  region: string;
+  lat: number;
+  lon: number;
+  status: 'ONLINE' | 'WARNING' | 'DEGRADED';
+  latency: number;
+  cpu: number;
+  ram: number;
+  disk: number;
+  workers: number;
+  txnsProcessed: number;
+  settlementValue: string;
+  lastSeal: string;
+  lastConsensus: string;
+  softwareVersion: string;
+  trustScore: string;
+  currentLoad?: string;
+}
+
+export interface Route {
+  id: string;
+  fromId: string;
+  toId: string;
+  avgTps: number;
+  volume: string;
+  latency: number;
+  successRate: number;
+  drift: number;
+  loss: number;
+  consensus: string;
+}
