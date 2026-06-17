@@ -64,21 +64,45 @@ export default function CommandCenterView({
   const [terminalTyping, setTerminalTyping] = useState<boolean>(false);
 
   // Set up selected elements lists
-  const selectedNode = useMemo(() => geoNodes.find(n => n.id === selectedNodeId) || geoNodes[0], [selectedNodeId, geoNodes]);
-  const selectedRoute = useMemo(() => routes.find(r => r.id === selectedRouteId) || null, [selectedRouteId, routes]);
+  const selectedNode = useMemo(() => {
+    if (!geoNodes || geoNodes.length === 0) return null;
+    return geoNodes.find(n => n.id === selectedNodeId) || geoNodes[0];
+  }, [selectedNodeId, geoNodes]);
+
+  const selectedRoute = useMemo(() => {
+    if (!routes || routes.length === 0) return null;
+    return routes.find(r => r.id === selectedRouteId) || null;
+  }, [selectedRouteId, routes]);
 
   const [selectedAgentIndex, setSelectedAgentIndex] = useState<number>(0);
+
+  if (!geoNodes || geoNodes.length === 0) {
+    return (
+      <div className="fixed inset-0 z-50 bg-[#040406] flex items-center justify-center font-mono">
+        <div className="text-center space-y-4">
+          <div className="h-12 w-12 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-cyan-500 uppercase tracking-widest text-sm animate-pulse">Establishing Authority Link...</p>
+          <button onClick={onClose} className="mt-8 px-4 py-2 border border-rose-500 text-rose-500 text-xs uppercase hover:bg-rose-500/10 transition-colors">
+            Terminate Connection
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Guaranteed at this point that selectedNode exists because geoNodes.length > 0
+  const activeNode = selectedNode!;
 
   // Typing operator terminal trace effect on node selection
   useEffect(() => {
     setTerminalTyping(true);
     let logs: string[] = [];
-    if (selectedNode) {
+    if (activeNode) {
       logs = [
-        `[SOVR_SHELL] CONNECTED to host: ${selectedNode.name} (${selectedNode.id})`,
+        `[SOVR_SHELL] CONNECTED to host: ${activeNode.name} (${activeNode.id})`,
         `[AUTH_HANDSHAKE] mTLS v1.3 stream mutually-confirmed: PASS`,
         `[COMPLIANCE] Merkle root seal matching state digest verified`,
-        `[DIAGNOSTIC] latency: ${selectedNode.latency}ms RT, CPU: ${selectedNode.cpu}%, RAM: ${selectedNode.ram}%`,
+        `[DIAGNOSTIC] latency: ${activeNode.latency}ms RT, CPU: ${activeNode.cpu}%, RAM: ${activeNode.ram}%`,
         `[SECURITY] Authority ledger invariance validated. Net drift: 0.000`
       ];
     } else {
@@ -563,53 +587,53 @@ export default function CommandCenterView({
                   <Cpu className="w-3.5 h-3.5 text-[#02c39a]" />
                   Node Intelligence Diagnostic Panel
                 </span>
-                <span className="text-white/20 select-text font-mono text-[8px] tracking-tight">NODE ID: {selectedNode.id}</span>
+                <span className="text-white/20 select-text font-mono text-[8px] tracking-tight">NODE ID: {activeNode.id}</span>
               </span>
 
               <div className="mt-3 flex items-start gap-4">
                 {/* Visual Mini 4 Health Rings Area */}
                 <div className="grid grid-cols-2 gap-3 bg-[#0c0c12] p-2.5 border border-white/5 rounded">
-                  {renderHealthRing(selectedNode.cpu, selectedNode.cpu > 80 ? 'text-amber-500' : 'text-[#02c39a]', 'CPU LIMIT')}
-                  {renderHealthRing(selectedNode.ram, 'text-[#02c39a]', 'MEM ALLOC')}
-                  {renderHealthRing(selectedNode.disk, 'text-purple-400', 'DISK USE')}
-                  {renderHealthRing(100 - selectedNode.latency / 2, 'text-[#02c39a]', 'NET SYNC')}
+                  {renderHealthRing(activeNode.cpu, activeNode.cpu > 80 ? 'text-amber-500' : 'text-[#02c39a]', 'CPU LIMIT')}
+                  {renderHealthRing(activeNode.ram, 'text-[#02c39a]', 'MEM ALLOC')}
+                  {renderHealthRing(activeNode.disk, 'text-purple-400', 'DISK USE')}
+                  {renderHealthRing(100 - activeNode.latency / 2, 'text-[#02c39a]', 'NET SYNC')}
                 </div>
 
                 {/* Node static properties */}
                 <div className="flex-grow space-y-1 text-[10px] font-mono leading-tight">
                   <div className="flex justify-between border-b border-[#2a2a35]/40 pb-0.5">
                     <span className="text-white/40">Node Role:</span>
-                    <span className="text-white font-bold">{selectedNode.role}</span>
+                    <span className="text-white font-bold">{activeNode.role}</span>
                   </div>
                   <div className="flex justify-between border-b border-[#2a2a35]/40 pb-0.5">
                     <span className="text-white/40">Region Location:</span>
-                    <span className="text-white">{selectedNode.region}</span>
+                    <span className="text-white">{activeNode.region}</span>
                   </div>
                   <div className="flex justify-between border-b border-[#2a2a35]/40 pb-0.5">
                     <span className="text-white/40">Node Status:</span>
-                    <span className={`font-bold ${selectedNode.status === 'ONLINE' ? 'text-emerald-400' : 'text-amber-400'}`}>
-                      {selectedNode.status}
+                    <span className={`font-bold ${activeNode.status === 'ONLINE' ? 'text-emerald-400' : 'text-amber-400'}`}>
+                      {activeNode.status}
                     </span>
                   </div>
                   <div className="flex justify-between border-b border-[#2a2a35]/40 pb-0.5">
                     <span className="text-white/40">Heartbeat Jitter:</span>
-                    <span className="text-cyan-300 font-bold">{selectedNode.latency}ms RT Lat</span>
+                    <span className="text-cyan-300 font-bold">{activeNode.latency}ms RT Lat</span>
                   </div>
                   <div className="flex justify-between border-b border-[#2a2a35]/40 pb-0.5">
                     <span className="text-white/40">Synchronized Workers:</span>
-                    <span className="text-white">{selectedNode.workers.toLocaleString()} slots</span>
+                    <span className="text-white">{activeNode.workers.toLocaleString()} slots</span>
                   </div>
                   <div className="flex justify-between border-b border-[#2a2a35]/40 pb-0.5">
                     <span className="text-white/40">Total Txns Processed:</span>
-                    <span className="text-[#02c39a] font-bold">{selectedNode.txnsProcessed.toLocaleString()} items</span>
+                    <span className="text-[#02c39a] font-bold">{activeNode.txnsProcessed.toLocaleString()} items</span>
                   </div>
                   <div className="flex justify-between border-b border-[#2a2a35]/40 pb-0.5">
                     <span className="text-white/40">SVT Net Flow Capacity:</span>
-                    <span className="text-amber-400 font-bold">{selectedNode.settlementValue}</span>
+                    <span className="text-amber-400 font-bold">{activeNode.settlementValue}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-white/40">Quorum Trust Score:</span>
-                    <span className="text-[#02c39a] font-bold">{selectedNode.trustScore}</span>
+                    <span className="text-[#02c39a] font-bold">{activeNode.trustScore}</span>
                   </div>
                 </div>
               </div>

@@ -24,6 +24,7 @@ import RegisterIntegrationForm from './components/RegisterIntegrationForm';
 import CommandCenterView from './components/CommandCenterView';
 import SovereignLanding from './components/SovereignLanding';
 import MobileTerminalView from './components/MobileTerminalView';
+import ErrorBoundary from './components/ErrorBoundary';
 import backgroundMap from './assets/images/sovr_background_map_1781167617436.png';
 
 // Lucide Icons
@@ -941,26 +942,28 @@ export default function App() {
 
       {/* COMMAND CENTER OPERATIONS OVERLAY */}
       {isCommandViewActive && (
-        <CommandCenterView
-          onClose={() => setIsCommandViewActive(false)}
-          totalAssetsUSD={totalAssetsUSD}
-          totalSVT={totalSVT}
-          p99LatencyMs={health.p99LatencyMs}
-          transactions={transactions}
-          formatCurrency={formatCurrency}
-          accounts={accounts}
-          pulseCount={pulseCount}
-          pendingVerifications={pendingVerifications}
-          timelineEvents={timelineEvents}
-          ingestionItems={ingestionItems}
-          agents={agents}
-          anomalies={anomalies}
-          geoNodes={geoNodes}
-          routes={routes}
-          currentBlockHeight={chain[0]?.height || 0}
-          onTriggerAnomaly={handleTriggerAnomaly}
-          onDismissAnomaly={handleDismissAnomaly}
-        />
+        <ErrorBoundary>
+          <CommandCenterView
+            onClose={() => setIsCommandViewActive(false)}
+            totalAssetsUSD={totalAssetsUSD}
+            totalSVT={totalSVT}
+            p99LatencyMs={health.p99LatencyMs}
+            transactions={transactions}
+            formatCurrency={formatCurrency}
+            accounts={accounts}
+            pulseCount={pulseCount}
+            pendingVerifications={pendingVerifications}
+            timelineEvents={timelineEvents}
+            ingestionItems={ingestionItems}
+            agents={agents}
+            anomalies={anomalies}
+            geoNodes={geoNodes}
+            routes={routes}
+            currentBlockHeight={chain[0]?.height || 0}
+            onTriggerAnomaly={handleTriggerAnomaly}
+            onDismissAnomaly={handleDismissAnomaly}
+          />
+        </ErrorBoundary>
       )}
       {false && isCommandViewActive && (
         <div id="command-center-fullscreen-dashboard" className="fixed inset-0 z-50 bg-[#040406]/98 backdrop-blur-xl flex flex-col p-6 overflow-y-auto space-y-6 font-mono text-xs select-none">
