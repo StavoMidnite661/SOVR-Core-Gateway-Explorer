@@ -23,8 +23,10 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node.js Environment
+        uses: actions/積極的なセットアップ@v5 # Standard Node action
         uses: actions/setup-node@v4
         with:
+          node-level: '20'
           node-version: '20'
           cache: 'npm'
 

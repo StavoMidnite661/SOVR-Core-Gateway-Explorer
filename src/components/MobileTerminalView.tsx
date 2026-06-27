@@ -36,7 +36,7 @@ import {
   RefreshCw,
   Plus
 } from 'lucide-react';
-import { Transaction, LedgerAccount, HashBlock, ConnectedApp, SystemHealth, GeoNode, Route } from '../types';
+import { Transaction, LedgerAccount, HashBlock, ConnectedApp, SystemHealth } from '../types';
 import SovereignGlobe from './SovereignGlobe';
 
 interface MobileTerminalProps {
@@ -56,14 +56,6 @@ interface MobileTerminalProps {
   clearNotifications: () => void;
   totalSVT: number;
   totalAssetsUSD: number;
-  pulseCount: number;
-  pendingVerifications: number;
-  timelineEvents: any[];
-  ingestionItems: any[];
-  agents: any[];
-  anomalies: any[];
-  geoNodes: GeoNode[];
-  routes: Route[];
 }
 
 export default function MobileTerminalView({
@@ -82,15 +74,7 @@ export default function MobileTerminalView({
   notifications,
   clearNotifications,
   totalSVT,
-  totalAssetsUSD,
-  pulseCount,
-  pendingVerifications,
-  timelineEvents,
-  ingestionItems,
-  agents,
-  anomalies,
-  geoNodes,
-  routes
+  totalAssetsUSD
 }: MobileTerminalProps) {
   // Navigation Tabs: 'dashboard' | 'network' | 'ledger' | 'agents' | 'more'
   const [activeTab, setActiveTab] = useState<'dashboard' | 'network' | 'ledger' | 'agents' | 'more'>('dashboard');
@@ -124,6 +108,39 @@ export default function MobileTerminalView({
   const [activeTelemetryTab, setActiveTelemetryTab] = useState<'tps' | 'treasury' | 'settlement' | 'consensus' | 'load'>('tps');
   const graphScrollRef = useRef<HTMLDivElement>(null);
 
+  // Geo nodes detail database for drawer lookups (aligned with CommandCenterView)
+  const mobileGeonodes = [
+    { id: 'NY_LC', name: 'NY Ledger Core', role: 'Ledger Settlement Host', region: 'North America', lat: 40.7128, lon: -74.0060, status: 'ONLINE', latency: 12, cpu: 24, ram: 42, disk: 68, workers: 1522, txnsProcessed: 1824552, settlementValue: '$84.3M', lastSeal: 'blk_7420', trustScore: '99.998%', currentLoad: '42%' },
+    { id: 'LDN_R', name: 'London Routing', role: 'Consensus Coordinator', region: 'Western Europe', lat: 51.5072, lon: -0.1276, status: 'ONLINE', latency: 15, cpu: 18, ram: 37, disk: 52, workers: 1140, txnsProcessed: 1420550, settlementValue: '$65.1M', lastSeal: 'blk_7423', trustScore: '100% NOM', currentLoad: '28%' },
+    { id: 'ZRH_T', name: 'Zurich Treasury', role: 'SOVR Vault Agent', region: 'Central Europe', lat: 47.3769, lon: 8.5417, status: 'ONLINE', latency: 16, cpu: 31, ram: 50, disk: 61, workers: 920, txnsProcessed: 981440, settlementValue: '$112.4M', lastSeal: 'blk_7422', trustScore: '99.999%', currentLoad: '50%' },
+    { id: 'SGP_G', name: 'Singapore Gate', role: 'Asynchronous Gateway', region: 'Southeast Asia', lat: 1.3521, lon: 103.8198, status: 'ONLINE', latency: 32, cpu: 48, ram: 58, disk: 74, workers: 2150, txnsProcessed: 2891460, settlementValue: '$144.8M', lastSeal: 'blk_7424', trustScore: '99.997%', currentLoad: '62%' },
+    { id: 'TYO_C', name: 'Tokyo Consensus', role: 'Witness Notary Node', region: 'East Asia', lat: 35.6762, lon: 139.6503, status: 'ONLINE', latency: 41, cpu: 14, ram: 29, disk: 44, workers: 840, txnsProcessed: 1102900, settlementValue: '$48.2M', lastSeal: 'blk_7423', trustScore: '100.00%', currentLoad: '18%' },
+    { id: 'DXB_T', name: 'Dubai Treasury', role: 'Liquidity Oracle Host', region: 'Middle East', lat: 25.2048, lon: 55.2708, status: 'ONLINE', latency: 22, cpu: 27, ram: 45, disk: 59, workers: 1180, txnsProcessed: 1530200, settlementValue: '$96.5M', lastSeal: 'blk_7421', trustScore: '99.995%', currentLoad: '34%' },
+    { id: 'SYD_S', name: 'Sydney Settlement', role: 'Settlement Liquidator', region: 'Oceania', lat: -33.8688, lon: 151.2093, status: 'ONLINE', latency: 82, cpu: 19, ram: 36, disk: 48, workers: 610, txnsProcessed: 591320, settlementValue: '$21.9M', lastSeal: 'blk_7423', trustScore: '100% NOM', currentLoad: '21%' },
+    { id: 'SAO_L', name: 'São Paulo Liquidity', role: 'Asset Pool Custodian', region: 'South America', lat: -23.5505, lon: -46.6333, status: 'WARNING', latency: 94, cpu: 82, ram: 79, disk: 88, workers: 1320, txnsProcessed: 1205300, settlementValue: '$39.2M', lastSeal: 'blk_7422', trustScore: '98.423%', currentLoad: '85%' },
+    { id: 'YTO_V', name: 'Toronto Validator', role: 'Integrity Verifier Client', region: 'North America', lat: 43.6532, lon: -79.3832, status: 'ONLINE', latency: 18, cpu: 21, ram: 40, disk: 51, workers: 740, txnsProcessed: 914550, settlementValue: '$34.0M', lastSeal: 'blk_7423', trustScore: '99.999%', currentLoad: '24%' },
+    { id: 'FRA_R', name: 'Frankfurt Reserve', role: 'Reserve Yield Oracle', region: 'Western Europe', lat: 50.1109, lon: 8.6821, status: 'ONLINE', latency: 14, cpu: 25, ram: 44, disk: 55, workers: 1050, txnsProcessed: 1311450, settlementValue: '$57.8M', lastSeal: 'blk_7419', trustScore: '100% NOM', currentLoad: '30%' }
+  ];
+
+  const mobileRoutes = [
+    { id: 'R1', fromId: 'LDN_R', toId: 'SGP_G', avgTps: 162, volume: '$4.8M', latency: 14, successRate: 99.97, loss: 0.00, consensus: 'Verified' },
+    { id: 'R2', fromId: 'NY_LC', toId: 'LDN_R', avgTps: 245, volume: '$12.4M', latency: 8, successRate: 100.0, loss: 0.00, consensus: 'Verified' },
+    { id: 'R3', fromId: 'ZRH_T', toId: 'FRA_R', avgTps: 98, volume: '$16.2M', latency: 3, successRate: 99.99, loss: 0.00, consensus: 'Verified' },
+    { id: 'R4', fromId: 'DXB_T', toId: 'TYO_C', avgTps: 110, volume: '$5.1M', latency: 28, successRate: 99.95, loss: 0.01, consensus: 'Verified' },
+    { id: 'R5', fromId: 'SGP_G', toId: 'SYD_S', avgTps: 76, volume: '$3.5M', latency: 42, successRate: 99.98, loss: 0.00, consensus: 'Verified' },
+    { id: 'R6', fromId: 'SAO_L', toId: 'NY_LC', avgTps: 120, volume: '$2.9M', latency: 86, successRate: 99.85, loss: 0.04, consensus: 'Warning_Sync' }
+  ];
+
+  // Mobile Agent information
+  const mobileAgents = [
+    { name: 'Settlement Agent', status: 'ACTIVE', task: 'Polling client deposit nodes...', confidence: '99.99%', queue: 0, load: '1.2%', logs: ['09:01:14 - Handled ingress ledger matching', '09:01:10 - Verification lock active', '09:00:54 - Parsed 24 transaction packets'] },
+    { name: 'Treasury Agent', status: 'ONLINE', task: 'Balancing multi-pool weights...', confidence: '99.98%', queue: 1, load: '0.8%', logs: ['09:01:12 - Collateral pool verification matched', '09:01:00 - Rebalanced Swiss margin escrow'] },
+    { name: 'Audit Agent', status: 'ONLINE', task: 'Validating seal block proofs...', confidence: '100.0%', queue: 0, load: '2.5%', logs: ['09:01:15 - Checked trial balance equivalence', '09:01:05 - Verified zeroes matrix invariants'] },
+    { name: 'Witness Agent', status: 'IDLE', task: 'Signing epoch hash lists...', confidence: '99.99%', queue: 0, load: '0.1%', logs: ['09:00:45 - Generated epoch witness certificate', '09:00:00 - Quorum confirmed signature'] },
+    { name: 'Oracle Agent', status: 'ACTIVE', task: 'Fetching USD/SVT parity state...', confidence: '99.97%', queue: 0, load: '1.1%', logs: ['09:01:13 - Updated secondary exchange limits', '09:00:58 - Loaded reserve feeds payload'] },
+    { name: 'Routing Agent', status: 'ONLINE', task: 'Optimizing packet roundtrips...', confidence: '99.95%', queue: 0, load: '1.4%', logs: ['09:01:08 - Re-routed degraded São Paulo lanes', '09:01:01 - Core p99 latency evaluation'] }
+  ];
+
   // Detect orientation change to automatically trigger landscape command view
   useEffect(() => {
     const handleOrientation = () => {
@@ -141,6 +158,7 @@ export default function MobileTerminalView({
     setActiveTelemetryTab(tab);
     if (!graphScrollRef.current) return;
     const scrollWidth = graphScrollRef.current.scrollWidth;
+    const clientWidth = graphScrollRef.current.clientWidth;
     const tabIndices = { tps: 0, treasury: 1, settlement: 2, consensus: 3, load: 4 };
     const scrollDest = (scrollWidth / 5) * tabIndices[tab];
     graphScrollRef.current.scrollTo({ left: scrollDest, behavior: 'smooth' });
@@ -174,8 +192,8 @@ export default function MobileTerminalView({
   };
 
   // Find detailed records
-  const selectedNode = geoNodes.find(n => n.id === selectedNodeId);
-  const selectedRoute = routes.find(r => r.id === selectedRouteId);
+  const selectedNode = mobileGeonodes.find(n => n.id === selectedNodeId);
+  const selectedRoute = mobileRoutes.find(r => r.id === selectedRouteId);
 
   // Filter Transactions for search querying
   const filteredTxns = transactions.filter(t => {
@@ -195,7 +213,7 @@ export default function MobileTerminalView({
       <header className="sticky top-0 z-40 bg-[#07070a]/92 border-b border-[#1b1b24] px-4 py-3 backdrop-blur-md flex items-center justify-between">
         <div className="flex items-center gap-2">
           <div className="h-6 w-6 relative flex items-center justify-center">
-            <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-indigo-600 rounded rotate-45 animate-pulse" />
+            <div className="absolute inset-0 bg-gradient-to-br from-cyan-400 to-orange-500 rounded rotate-45 animate-pulse" />
             <Cpu className="w-3.5 h-3.5 text-cyan-200 relative z-10" />
           </div>
           <div>
@@ -402,7 +420,7 @@ export default function MobileTerminalView({
                     <div className="relative h-20 bg-black/40 border border-white/5 rounded p-2 flex items-end justify-between overflow-hidden">
                       {/* Interactive mock micro graph columns */}
                       {volumeSeries.slice(-16).map((item, idx) => {
-                        const maxVal = Math.max(...volumeSeries.slice(-16).map((v: any) => v.settlementVelocity));
+                        const maxVal = Math.max(...volumeSeries.slice(-16).map(v => v.settlementVelocity));
                         const scalingHeight = item.settlementVelocity ? (item.settlementVelocity / maxVal) * 100 : 50;
                         return (
                           <div key={idx} className="w-[4%] bg-gradient-to-t from-[#02c39a]/60 to-[#02c39a] rounded-t-xs hover:opacity-100 transition-opacity" style={{ height: `${scalingHeight}%` }} />
@@ -426,7 +444,7 @@ export default function MobileTerminalView({
                     </div>
                     <div className="relative h-20 bg-black/40 border border-white/5 rounded p-2 flex items-end justify-between overflow-hidden">
                       {volumeSeries.slice(-16).map((item, idx) => {
-                        const maxVal = Math.max(...volumeSeries.slice(-16).map((v: any) => v.treasuryFlow));
+                        const maxVal = Math.max(...volumeSeries.slice(-16).map(v => v.treasuryFlow));
                         const scalingHeight = item.treasuryFlow ? (item.treasuryFlow / maxVal) * 100 : 50;
                         return (
                           <div key={idx} className="w-[4%] bg-gradient-to-t from-amber-500/50 to-amber-500 rounded-t-xs" style={{ height: `${scalingHeight}%` }} />
@@ -473,7 +491,7 @@ export default function MobileTerminalView({
                     </div>
                     <div className="relative h-20 bg-black/40 border border-white/5 rounded p-2 flex items-end justify-between overflow-hidden">
                       {volumeSeries.slice(-16).map((item, idx) => {
-                        const maxVal = Math.max(...volumeSeries.slice(-16).map((v: any) => v.networkLoad));
+                        const maxVal = Math.max(...volumeSeries.slice(-16).map(v => v.networkLoad));
                         const scalingHeight = item.networkLoad ? (item.networkLoad / maxVal) * 100 : 50;
                         return (
                           <div key={idx} className="w-[4%] bg-gradient-to-t from-purple-500/50 to-purple-500 rounded-t-xs" style={{ height: `${scalingHeight}%` }} />
@@ -551,8 +569,8 @@ export default function MobileTerminalView({
               {/* THREE.JS RENDER STAGE (Interactive touch globe) */}
               <div className="h-[320px] bg-black/80 border border-zinc-800 rounded-lg relative overflow-hidden">
                 <SovereignGlobe
-                  geoNodes={geoNodes}
-                  routes={routes}
+                  geoNodes={mobileGeonodes as any}
+                  routes={mobileRoutes as any}
                   selectedNodeId={selectedNodeId}
                   selectedRouteId={selectedRouteId}
                   onSelectNode={(id) => {
@@ -573,7 +591,7 @@ export default function MobileTerminalView({
                   Validator Inbound Connection Channels
                 </span>
                 <div className="grid grid-cols-2 gap-2">
-                  {routes.map((route) => (
+                  {mobileRoutes.map((route) => (
                     <button
                       key={route.id}
                       onClick={() => {
@@ -792,7 +810,7 @@ export default function MobileTerminalView({
 
               {/* CARD STACK OF AGENTS */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {agents.map((agent, idx) => {
+                {mobileAgents.map((agent, idx) => {
                   const isAgentSelected = selectedAgentIndex === idx;
                   return (
                     <div
@@ -800,7 +818,7 @@ export default function MobileTerminalView({
                       onClick={() => setSelectedAgentIndex(isAgentSelected ? null : idx)}
                       className={`border rounded-lg p-3 transition-all cursor-pointer backdrop-blur ${
                         isAgentSelected
-                          ? 'bg-[#0f0a1d]/90 border-purple-500/50 shadow-lg'
+                          ? 'bg-[#0f0a1d]/90 border-purple-500/50 shadow-lg glow-cyan'
                           : 'bg-[#08080c]/85 border-[#1b1b24] hover:bg-zinc-950/80'
                       }`}
                     >
@@ -840,7 +858,7 @@ export default function MobileTerminalView({
                           className="mt-3 pt-3 border-t border-zinc-800/60 font-mono text-[8.5px] text-[#02c39a] space-y-1 bg-black/40 p-2 rounded"
                         >
                           <span className="text-white/40 block text-[7.5px] uppercase tracking-wider mb-1 font-bold">Execution Logs</span>
-                          {agent.logs.map((log: string, lIdx: number) => (
+                          {agent.logs.map((log, lIdx) => (
                             <div key={lIdx} className="truncate select-none font-mono">➔ {log}</div>
                           ))}
                         </motion.div>
@@ -981,8 +999,8 @@ export default function MobileTerminalView({
         {/* Core Trigger button */}
         <button
           onClick={() => setIsFabOpen(!isFabOpen)}
-          className={`h-11 w-11 rounded-full flex items-center justify-center transition-all shadow-xl active:scale-95 text-white ${
-            isFabOpen ? 'bg-rose-600 rotate-45' : 'bg-gradient-to-br from-cyan-400 to-indigo-600'
+          className={`h-11 w-11 rounded-full glow-cyan flex items-center justify-center transition-all shadow-xl active:scale-95 text-white ${
+            isFabOpen ? 'bg-rose-600 rotate-45' : 'bg-gradient-to-br from-cyan-400 to-orange-500'
           }`}
           aria-label="Toggle quick actions radial menu"
         >
@@ -1270,7 +1288,7 @@ export default function MobileTerminalView({
 
               <button
                 type="submit"
-                className="w-full py-2.5 bg-gradient-to-r from-[#02c39a] to-blue-600 rounded text-slate-950 text-xs font-black uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all text-center"
+                className="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-orange-500 rounded text-slate-950 text-xs font-black uppercase tracking-widest hover:opacity-90 active:scale-95 transition-all text-center"
               >
                 Seal & Transmit Broadcast Code
               </button>
@@ -1346,8 +1364,8 @@ export default function MobileTerminalView({
               {/* Middle full screen interactive globe overlay */}
               <div className="col-span-6 bg-[#040407] border border-[#ff5500]/20 rounded relative overflow-hidden">
                 <SovereignGlobe
-                  geoNodes={geoNodes}
-                  routes={routes}
+                  geoNodes={mobileGeonodes as any}
+                  routes={mobileRoutes as any}
                   selectedNodeId={null}
                   selectedRouteId={null}
                   onSelectNode={() => {}}

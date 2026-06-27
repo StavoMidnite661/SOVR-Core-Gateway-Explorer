@@ -4,7 +4,7 @@ import {
   FileText, Shield, Table, ChevronRight, Activity, 
   CheckSquare, Check, RefreshCw, AlertTriangle, Play, HelpCircle,
   TrendingDown, Coins, Database, Layers, ArrowRightLeft, DollarSign, ListFilter,
-  Download, Printer, Copy
+  Download, Printer, Copy, X
 } from 'lucide-react';
 import { LedgerAccount, Transaction } from '../types';
 
@@ -44,6 +44,7 @@ export default function ComplianceHub({
   // Print & EXPORT Bureau States
   const [selectedExportDocType, setSelectedExportDocType] = useState<'f0901' | 'p09301' | 'p09410' | 'p10111' | 'integrity' | null>(null);
   const [copied, setCopied] = useState<boolean>(false);
+  const [printDocContent, setPrintDocContent] = useState<string | null>(null);
 
   const handleCopyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -65,54 +66,7 @@ export default function ComplianceHub({
   };
 
   const handlePrintDocument = (content: string) => {
-    const printFrame = document.createElement('div');
-    printFrame.id = 'sovr-print-overlay-frame';
-    printFrame.className = 'fixed inset-0 bg-white text-black p-10 font-mono text-xs z-[10000] overflow-y-auto whitespace-pre select-text';
-    printFrame.style.color = '#000000';
-    printFrame.style.backgroundColor = '#ffffff';
-    printFrame.innerHTML = `
-<div style="max-width: 800px; margin: 0 auto; line-height: 1.25; font-family: monospace;">
-  <div style="font-size: 10px; text-transform: uppercase; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 20px; display: flex; justify-content: space-between;">
-    <span>[SYSTEM OPERATIONAL HARDCOPY PRINT OUT]</span>
-    <span>CONFIDENTIAL PORTAL EXPORT: SOVR DEVELOPMENT HOLDINGS LLC v4.5</span>
-  </div>
-  ${content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}
-  <div style="margin-top: 30px; border-top: 1px dashed #000; padding-top: 10px; font-size: 8px; display: flex; justify-content: space-between; color: #555;">
-    <span>AUDITED & SIGNED LOGS CHRONO</span>
-    <span>Printed via compliance hub Command Center</span>
-  </div>
-</div>
-`;
-    const printStyle = document.createElement('style');
-    printStyle.id = 'sovr-print-style-injector';
-    printStyle.innerHTML = `
-      @media print {
-        body > * {
-          display: none !important;
-        }
-        #sovr-print-overlay-frame {
-          display: block !important;
-          position: absolute !important;
-          left: 0 !important;
-          top: 0 !important;
-          width: 100% !important;
-          height: auto !important;
-          background: white !important;
-          color: black !important;
-        }
-      }
-    `;
-    
-    document.body.appendChild(printFrame);
-    document.head.appendChild(printStyle);
-    
-    setTimeout(() => {
-      window.print();
-      setTimeout(() => {
-        document.body.removeChild(printFrame);
-        document.head.removeChild(printStyle);
-      }, 500);
-    }, 100);
+    setPrintDocContent(content);
   };
 
   // Helper printer compilers
@@ -1545,6 +1499,91 @@ III. AMPERSAND ACTION EXCEPTION AUDIT POLICY REPORT:
               </div>
             </motion.div>
           </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* PRINT PREVIEW MODAL */}
+      <AnimatePresence>
+        {printDocContent && (
+          <div className="fixed inset-0 z-[10010] bg-black/95 backdrop-blur-md flex flex-col items-center justify-start p-4 sm:p-8 overflow-y-auto font-mono text-xs select-text">
+            {/* Top Toolbar */}
+            <div className="w-full max-w-3xl bg-slate-900 border border-slate-800 rounded-lg p-3 mb-6 flex items-center justify-between shadow-xl no-print">
+              <div className="flex items-center gap-2">
+                <Printer className="w-4 h-4 text-cyan-400" />
+                <span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Secure Hardcopy Print Utility</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-orange-500 hover:from-cyan-400 hover:to-orange-400 text-black font-bold font-mono rounded text-[10px] uppercase transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <Printer className="w-3 h-3" />
+                  Print / Save as PDF
+                </button>
+                <button
+                  onClick={() => setPrintDocContent(null)}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-mono rounded text-[10px] uppercase transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                  Cancel
+                </button>
+              </div>
+            </div>
+
+            {/* Print Container Sheet */}
+            <div 
+              id="sovr-compliance-print-sheet" 
+              className="w-full max-w-3xl bg-white text-black p-8 sm:p-12 shadow-2xl rounded border border-slate-300 font-mono text-[10px] leading-relaxed whitespace-pre overflow-x-auto"
+            >
+              <div style={{ fontSize: '10px', textTransform: 'uppercase', borderBottom: '2px solid #000', paddingBottom: '8px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between' }}>
+                <span className="font-bold">[SYSTEM OPERATIONAL HARDCOPY PRINT OUT]</span>
+                <span className="text-slate-500 font-bold">CONFIDENTIAL PORTAL EXPORT: SOVR DEVELOPMENT HOLDINGS LLC v4.5</span>
+              </div>
+              
+              <div className="font-mono text-[10px] leading-relaxed">
+                {printDocContent}
+              </div>
+
+              <div style={{ marginTop: '30px', borderTop: '1px dashed #000', paddingTop: '10px', fontSize: '9px', display: 'flex', justifyContent: 'space-between', color: '#555' }}>
+                <span className="font-bold">AUDITED & SIGNED LOGS CHRONO</span>
+                <span className="font-bold">Printed via compliance hub Command Center</span>
+              </div>
+            </div>
+
+            {/* Print styles */}
+            <style dangerouslySetInnerHTML={{ __html: `
+              @media print {
+                body {
+                  background: white !important;
+                  color: black !important;
+                }
+                body > * {
+                  display: none !important;
+                }
+                #sovr-compliance-print-sheet {
+                  display: block !important;
+                  position: absolute !important;
+                  left: 0 !important;
+                  top: 0 !important;
+                  width: 100% !important;
+                  height: auto !important;
+                  background: white !important;
+                  color: black !important;
+                  padding: 24px !important;
+                  margin: 0 !important;
+                  box-shadow: none !important;
+                  border: none !important;
+                  white-space: pre !important;
+                }
+                #sovr-compliance-print-sheet * {
+                  display: revert !important;
+                }
+                .no-print {
+                  display: none !important;
+                }
+              }
+            `}} />
+          </div>
         )}
       </AnimatePresence>
 

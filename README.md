@@ -9,6 +9,30 @@
 
 ---
 
+## 📁 Technical Documentation Indexes
+
+All advanced system architectures, microservices, databases, and operational workflows are fully documented inside the local [`/docs`](/docs) directory:
+
+*   **[Repository Manifest](/docs/MANIFEST.md)** — Canonical structure of the codebase, versions, and build guides.
+*   **[Core Architecture Specification](/docs/ARCHITECTURE.md)** — Core flows, Three.js spatial globe configurations, and mathematical invariance rules.
+*   **[System Coordination Specification](/docs/SYSTEM.md)** — Runtime environments, state synchronization, and UI controllers.
+*   **[Services & Microservice Inventory](/docs/SERVICES.md)** — Microservices detailed roles, inputs, outputs, database tables, and dependencies.
+*   **[Gateway API Manifest](/docs/API.md)** — Endpoint schema specifications, request payloads, and implementation states.
+*   **[Event Catalog & Pub/Sub Schemas](/docs/EVENTS.md)** — Complete specifications for asynchronous events and failover behavior.
+*   **[Database Schemas & ERD Models](/docs/DATABASE.md)** — Table mappings, relationships, keys, audit structures, and retention schemas.
+*   **[System Configuration Manual](/docs/CONFIGURATION.md)** — Settings objects, policy definitions, currencies, and limits.
+*   **[Environment Variables Manual](/docs/ENVIRONMENT.md)** — Database credentials, third-party keys, security policies, and `.env.example` specifications.
+*   **[Production Deployment Manual](/docs/DEPLOYMENT.md)** — Container bundling, Dockerfiles, Cloud Run instructions, and scaling bounds.
+*   **[Cybersecurity & Compliance Protocols](/docs/SECURITY.md)** — Symmetrical balance math, TLS levels, secrets policies, and disclosure templates.
+*   **[Core Business Workflows](/docs/WORKFLOWS.md)** — Ledger posting flowcharts, compliance packages compilation, and reserve rebalancing.
+*   **[Strategic Technology Roadmap](/docs/ROADMAP.md)** — Short, medium, and long-term milestones.
+*   **[Changelog & Historical Releases](/docs/CHANGELOG.md)** — Pre-GA and GA historical releases tracking.
+*   **[Contributing to SOVR Core](/docs/CONTRIBUTING.md)** — Developer rules, Conventional Commits styles, and branch guidelines.
+*   **[Production Readiness Checklist](/docs/PRODUCTION_READINESS.md)** — Complete pre-flight deployment audits, logging configs, and risk registers.
+*   **[TigerBeetle Core Database Integration](/docs/TIGERBEETLE_INTEGRATION.md)** — High-throughput hardware-accelerated ledger specifications.
+
+---
+
 ## 🏛️ Comprehensive Architectural Blueprint
 
 The **SOVR Core Gateway Explorer** is an advanced operational dashboard, ledger audit telemetry terminal, system coordinator, and compliance suite engineered to manage the global liquidity parameters of the **SOVR Capital Routing Network**. Designed for high-density setups, real-time operations, and international regulatory compliance, this terminal processes double-entry ledger state invariants dynamically and provides absolute cryptographic balance transparency to network operators.

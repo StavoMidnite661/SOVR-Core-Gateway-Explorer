@@ -46,86 +46,6 @@ interface SOVRGlobeProps {
   activeMode?: string;
 }
 
-// Highly precise continental projection coordinates for high-trust offline outlines
-const CONTINENTS = [
-  // North America
-  [
-    { lat: 70, lon: -168 }, { lat: 72, lon: -140 }, { lat: 83, lon: -80 }, 
-    { lat: 81, lon: -60 }, { lat: 61, lon: -64 }, { lat: 47, lon: -52 }, 
-    { lat: 44, lon: -68 }, { lat: 25, lon: -80 }, { lat: 18, lon: -96 }, 
-    { lat: 7, lon: -78 }, { lat: 10, lon: -84 }, { lat: 15, lon: -92 }, 
-    { lat: 25, lon: -108 }, { lat: 33, lon: -118 }, { lat: 48, lon: -125 }, 
-    { lat: 59, lon: -140 }, { lat: 60, lon: -146 }, { lat: 65, lon: -168 }, 
-    { lat: 70, lon: -168 }
-  ],
-  // Greenland
-  [
-    { lat: 83, lon: -30 }, { lat: 70, lon: -20 }, { lat: 60, lon: -43 }, 
-    { lat: 70, lon: -56 }, { lat: 80, lon: -65 }, { lat: 83, lon: -30 }
-  ],
-  // South America
-  [
-    { lat: 12, lon: -72 }, { lat: 8, lon: -55 }, { lat: -5, lon: -35 }, 
-    { lat: -23, lon: -43 }, { lat: -34, lon: -53 }, { lat: -54, lon: -67 }, 
-    { lat: -54, lon: -71 }, { lat: -40, lon: -73 }, { lat: -18, lon: -70 }, 
-    { lat: -5, lon: -81 }, { lat: 8, lon: -77 }, { lat: 12, lon: -72 }
-  ],
-  // Africa
-  [
-    { lat: 37, lon: 10 }, { lat: 36, lon: 15 }, { lat: 32, lon: 32 }, 
-    { lat: 30, lon: 32 }, { lat: 23, lon: 37 }, { lat: 12, lon: 43 }, 
-    { lat: 11, lon: 51 }, { lat: 4, lon: 39 }, { lat: -15, lon: 40 }, 
-    { lat: -34, lon: 20 }, { lat: -30, lon: 15 }, { lat: -6, lon: 12 }, 
-    { lat: 4, lon: 9 }, { lat: 5, lon: 0 }, { lat: 5, lon: -8 }, 
-    { lat: 14, lon: -17 }, { lat: 21, lon: -17 }, { lat: 33, lon: -7 }, 
-    { lat: 35, lon: -2 }, { lat: 37, lon: 10 }
-  ],
-  // Eurasia (Europe + Asia combined)
-  [
-    { lat: 36, lon: -6 }, { lat: 43, lon: -9 }, { lat: 50, lon: -1 }, 
-    { lat: 60, lon: 5 }, { lat: 71, lon: 25 }, { lat: 68, lon: 40 }, 
-    { lat: 73, lon: 80 }, { lat: 76, lon: 104 }, { lat: 72, lon: 130 }, 
-    { lat: 77, lon: 143 }, { lat: 66, lon: 170 }, { lat: 60, lon: 160 }, 
-    { lat: 52, lon: 156 }, { lat: 43, lon: 132 }, { lat: 35, lon: 120 }, 
-    { lat: 22, lon: 114 }, { lat: 10, lon: 108 }, { lat: 1, lon: 103 }, 
-    { lat: 12, lon: 98 }, { lat: 15, lon: 96 }, { lat: 8, lon: 78 }, 
-    { lat: 25, lon: 68 }, { lat: 25, lon: 58 }, { lat: 13, lon: 48 }, 
-    { lat: 31, lon: 34 }, { lat: 35, lon: 43 }, { lat: 41, lon: 28 }, 
-    { lat: 38, lon: 22 }, { lat: 40, lon: 14 }, { lat: 43, lon: 10 }, 
-    { lat: 43, lon: 3 }, { lat: 36, lon: -6 }
-  ],
-  // Australia
-  [
-    { lat: -22, lon: 113 }, { lat: -14, lon: 126 }, { lat: -11, lon: 136 }, 
-    { lat: -11, lon: 142 }, { lat: -25, lon: 153 }, { lat: -38, lon: 148 }, 
-    { lat: -35, lon: 138 }, { lat: -35, lon: 115 }, { lat: -22, lon: 113 }
-  ],
-  // Antarctica
-  [
-    { lat: -70, lon: -180 }, { lat: -70, lon: -120 }, { lat: -72, lon: -60 }, 
-    { lat: -75, lon: 0 }, { lat: -71, lon: 60 }, { lat: -69, lon: 120 }, 
-    { lat: -70, lon: 180 }, { lat: -85, lon: 180 }, { lat: -85, lon: -180 }, 
-    { lat: -70, lon: -180 }
-  ],
-  // United Kingdom / Ireland
-  [
-    { lat: 59, lon: -6 }, { lat: 55, lon: -2 }, { lat: 51, lon: 1 }, 
-    { lat: 50, lon: -5 }, { lat: 52, lon: -10 }, { lat: 56, lon: -7 }, 
-    { lat: 59, lon: -6 }
-  ],
-  // Japan
-  [
-    { lat: 45, lon: 142 }, { lat: 40, lon: 140 }, { lat: 35, lon: 140 }, 
-    { lat: 31, lon: 130 }, { lat: 33, lon: 132 }, { lat: 36, lon: 136 }, 
-    { lat: 43, lon: 144 }, { lat: 45, lon: 142 }
-  ],
-  // Madagascar
-  [
-    { lat: -12, lon: 49 }, { lat: -16, lon: 50 }, { lat: -25, lon: 47 }, 
-    { lat: -25, lon: 44 }, { lat: -17, lon: 44 }, { lat: -12, lon: 49 }
-  ]
-];
-
 // Earth parameter constants (matches high-trust Three.js visualization)
 const GLOBE_RADIUS = 1.5;
 
@@ -356,37 +276,52 @@ export default function SovereignGlobe({
     }
     globeGroup.add(gridGroup);
 
-    // Layer 4: Offline Vector Continent Coordinates Outlines (Double-layered safety)
-    CONTINENTS.forEach(poly => {
-      // Magenta coastline base trace
-      const points: THREE.Vector3[] = [];
-      poly.forEach(pt => {
-        points.push(latLngToVector3(pt.lat, pt.lon, GLOBE_RADIUS + 0.005));
-      });
-      if (points.length > 0) {
-        points.push(points[0].clone()); // Close loop
-      }
-      const geom = new THREE.BufferGeometry().setFromPoints(points);
-      
-      const lineMat = new THREE.LineBasicMaterial({
-        color: colors.outline,
-        transparent: true,
-        opacity: 0.65,
-        linewidth: 1.5
-      });
-      const traceLoop = new THREE.Line(geom, lineMat);
-      globeGroup.add(traceLoop);
-
-      // Thicker soft glow layer
-      const outerGlowMat = new THREE.LineBasicMaterial({
-        color: colors.secondaryOutline,
-        transparent: true,
-        opacity: 0.22,
-        linewidth: 3.0
-      });
-      const glowLoop = new THREE.Line(geom, outerGlowMat);
-      globeGroup.add(glowLoop);
+    // Layer 4: High-Resolution Real GeoJSON Outlines (Continents/Land)
+    const continentLineMat = new THREE.LineBasicMaterial({
+      color: colors.outline,
+      transparent: true,
+      opacity: 0.35, // Dimmed down brightness
+      linewidth: 1.5
     });
+    const continentGlowMat = new THREE.LineBasicMaterial({
+      color: colors.secondaryOutline,
+      transparent: true,
+      opacity: 0.15, // Base dimmed glow
+      linewidth: 3.0
+    });
+
+    fetch('https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_110m_land.geojson')
+      .then(res => res.json())
+      .then(geojson => {
+        const renderPoly = (polygon: number[][]) => {
+          const rawPoints: THREE.Vector3[] = [];
+          polygon.forEach((coord: number[]) => {
+            // GeoJSON coordinates are [lon, lat]
+            rawPoints.push(latLngToVector3(coord[1], coord[0], GLOBE_RADIUS + 0.005));
+          });
+          
+          if (rawPoints.length > 0) {
+            const geom = new THREE.BufferGeometry().setFromPoints(rawPoints);
+            const traceLoop = new THREE.Line(geom, continentLineMat);
+            const glowLoop = new THREE.Line(geom, continentGlowMat);
+            globeGroup.add(traceLoop);
+            globeGroup.add(glowLoop);
+          }
+        };
+
+        geojson.features.forEach((feature: any) => {
+          if (!feature.geometry) return;
+          const type = feature.geometry.type;
+          const coords = feature.geometry.coordinates;
+
+          if (type === 'Polygon') {
+            coords.forEach(renderPoly);
+          } else if (type === 'MultiPolygon') {
+            coords.forEach((poly: any) => poly.forEach(renderPoly));
+          }
+        });
+      })
+      .catch(err => console.error("Failed to load globe GeoJSON:", err));
 
     // Layer 5: Atmosphere shader glow (Outer Corona)
     const atmosphereGeom = new THREE.SphereGeometry(GLOBE_RADIUS * 1.14, 64, 64);
@@ -470,7 +405,7 @@ export default function SovereignGlobe({
     });
 
     // --- QUANTUM ENTANGLEMENT SYNC ENGINE: SATELLITES & SHOCKWAVES ---
-    const activeShockwaves: { mesh: THREE.Mesh; progress: number; origin: THREE.Vector3; triggeredNodes: Set<string> }[] = [];
+    const activeShockwaves: { mesh: THREE.Mesh; progress: number; origin: THREE.Vector3; triggeredNodes: Set<string>; type?: string }[] = [];
     const activeLasers: { line: THREE.Line; maxAge: number; age: number }[] = [];
     
     // Elevated particle system for beautiful outward-radiating node flares on selection
@@ -563,17 +498,17 @@ export default function SovereignGlobe({
       if (!node) return;
       const originVec = latLngToVector3(node.lat, node.lon, GLOBE_RADIUS);
 
-      // 1. Create a "Ripple Wave Train" containing 3 concentric, hyper-glitzy waves
-      const ringColors = [0xf97316, 0xec4899, 0x00f2ff]; // Orange -> Magenta -> Cyan
+      // 1. Create a slow, elegant "Realistic Quantum Ripple" with cool cyber colors
+      const ringColors = [0x00f2ff, 0x0ea5e9, 0x38bdf8, 0x7dd3fc]; // Elegant cyber-blue theme colors
       const ringRadius = 0.01;
 
       ringColors.forEach((colorHex, idx) => {
-        // Wide high-density rings with glowing additive blending
-        const shockwaveGeom = new THREE.RingGeometry(ringRadius * 0.75, ringRadius * 1.25, 48);
+        // Very thin rings for a realistic ripple effect
+        const shockwaveGeom = new THREE.RingGeometry(ringRadius * 0.98, ringRadius * 1.02, 64);
         const shockwaveMat = new THREE.MeshBasicMaterial({
           color: colorHex,
           transparent: true,
-          opacity: 1.0,
+          opacity: 0.4 - (idx * 0.05), // Inner rings slightly less opaque
           side: THREE.DoubleSide,
           depthWrite: false,
           blending: THREE.AdditiveBlending // Glow integration
@@ -581,28 +516,29 @@ export default function SovereignGlobe({
         const shockwaveMesh = new THREE.Mesh(shockwaveGeom, shockwaveMat);
         
         // Stack outward layers minimally so they do not overlap depth buffer-wise
-        shockwaveMesh.position.copy(originVec).multiplyScalar(1.006 + idx * 0.001);
+        shockwaveMesh.position.copy(originVec).multiplyScalar(1.002 + idx * 0.0005);
         shockwaveMesh.lookAt(new THREE.Vector3(0, 0, 0));
 
         globeGroup.add(shockwaveMesh);
 
         activeShockwaves.push({
           mesh: shockwaveMesh,
-          progress: -idx * 0.15, // Staggered start delay via negative initial values
+          progress: -idx * 0.12, // Realistic staggered ripple spacing
           origin: originVec,
-          triggeredNodes: new Set<string>()
+          triggeredNodes: new Set<string>(),
+          type: 'ring'
         });
       });
 
-      // 2. Generate an energetic starburst of 18 glowing micro particles radiating outward tangentially
-      const particleColors = [0x00f2ff, 0xf97316, 0xec4899, 0xffffff];
-      for (let pIdx = 0; pIdx < 18; pIdx++) {
+      // 2. Generate a delicate starburst of glowing micro particles radiating outward tangentially
+      const particleColors = [0x00f2ff, 0x0ea5e9, 0xffffff];
+      for (let pIdx = 0; pIdx < 16; pIdx++) {
         // Octahedron meshes look much cooler than simple boxes!
-        const pGeom = new THREE.OctahedronGeometry(0.012, 0);
+        const pGeom = new THREE.OctahedronGeometry(Math.random() > 0.5 ? 0.006 : 0.003, 0);
         const pMat = new THREE.MeshBasicMaterial({
           color: particleColors[pIdx % particleColors.length],
           transparent: true,
-          opacity: 1.0,
+          opacity: 0.8,
           blending: THREE.AdditiveBlending
         });
         const pMesh = new THREE.Mesh(pGeom, pMat);
@@ -620,10 +556,10 @@ export default function SovereignGlobe({
         const tangentVelocity = new THREE.Vector3()
           .crossVectors(originVec, randomVec)
           .normalize()
-          .multiplyScalar(0.016 + Math.random() * 0.030);
+          .multiplyScalar(0.008 + Math.random() * 0.015); // Slower, elegant speed
 
         // Add minor height ejection
-        const normalVelocity = originVec.clone().normalize().multiplyScalar(0.004 + Math.random() * 0.012);
+        const normalVelocity = originVec.clone().normalize().multiplyScalar(0.002 + Math.random() * 0.008);
         const finalVelocity = tangentVelocity.add(normalVelocity);
 
         activeParticles.push({
@@ -740,8 +676,13 @@ export default function SovereignGlobe({
       const deltaX = e.clientX - prevMouseX;
       const deltaY = e.clientY - prevMouseY;
 
-      velocityY = deltaX * 0.0055;
-      velocityX = deltaY * 0.0055;
+      // Direct drag rotation application (responsive, doesn't rely on tick loop)
+      globeGroup.rotation.y += deltaX * 0.004;
+      globeGroup.rotation.x += deltaY * 0.004;
+
+      // Set decay momentum
+      velocityY = deltaX * 0.0004;
+      velocityX = deltaY * 0.0004;
 
       prevMouseX = e.clientX;
       prevMouseY = e.clientY;
@@ -768,8 +709,12 @@ export default function SovereignGlobe({
       const deltaX = e.touches[0].clientX - prevMouseX;
       const deltaY = e.touches[0].clientY - prevMouseY;
 
-      velocityY = deltaX * 0.0055;
-      velocityX = deltaY * 0.0055;
+      // Direct drag rotation application
+      globeGroup.rotation.y += deltaX * 0.004;
+      globeGroup.rotation.x += deltaY * 0.004;
+
+      velocityY = deltaX * 0.0004;
+      velocityX = deltaY * 0.0004;
 
       prevMouseX = e.touches[0].clientX;
       prevMouseY = e.touches[0].clientY;
@@ -796,11 +741,12 @@ export default function SovereignGlobe({
       const now = Date.now();
       const timeInSec = now * 0.001;
 
+      // Pulsating continents glow effect (slow, breathing)
+      const pulseWave = Math.sin(timeInSec * 0.6);
+      continentGlowMat.opacity = 0.08 + Math.pow(Math.max(0, pulseWave), 2) * 0.25;
+
       // Handle custom rotation, steady idle rotation & inertia momentum easing
       if (isDragging) {
-        globeGroup.rotation.y += velocityY;
-        globeGroup.rotation.x += velocityX;
-
         // Prevent pole flipping
         const maxPitch = Math.PI / 2.2;
         if (globeGroup.rotation.x > maxPitch) globeGroup.rotation.x = maxPitch;
@@ -922,40 +868,43 @@ export default function SovereignGlobe({
           sw.mesh.visible = false;
         } else {
           sw.mesh.visible = true;
-          // Animate exponential scaling for a premium organic snap effect
-          const snapProgress = Math.pow(sw.progress, 0.7);
-          const scl = 1 + snapProgress * 48;
-          sw.mesh.scale.set(scl, scl, 1);
-          (sw.mesh.material as THREE.Material).opacity = 1.0 - sw.progress;
+          
+            // Animate steady scaling for a realistic ripple effect (constant velocity)
+            const scl = 1 + sw.progress * 45; // Smooth, realistic expansion
+            sw.mesh.scale.set(scl, scl, 1);
+            
+            // Fade out exponentially for a natural disappearance
+            const organicOpacity = Math.pow(1.0 - sw.progress, 1.5) * 0.5;
+            (sw.mesh.material as THREE.Material).opacity = Math.max(0, organicOpacity);
 
-          // Check inter-node intersection triggers
-          const ringRad = 0.01;
-          const currentRadius = scl * ringRad;
+            // Check inter-node intersection triggers
+            const ringRad = 0.01;
+            const currentRadius = scl * ringRad;
 
-          geoNodesRef.current.forEach((node, nodeIdx) => {
-            if (node.id === selectedNodeIdRef.current) return; // ignore origin
-            if (sw.triggeredNodes.has(node.id)) return;
+            geoNodesRef.current.forEach((node, nodeIdx) => {
+              if (node.id === selectedNodeIdRef.current) return; // ignore origin
+              if (sw.triggeredNodes.has(node.id)) return;
 
-            const otherVec = latLngToVector3(node.lat, node.lon, GLOBE_RADIUS);
-            const dist = sw.origin.distanceTo(otherVec);
+              const otherVec = latLngToVector3(node.lat, node.lon, GLOBE_RADIUS);
+              const dist = sw.origin.distanceTo(otherVec);
 
-            if (currentRadius >= dist) {
-              sw.triggeredNodes.add(node.id);
-              const nodeMesh = nodeMeshes[nodeIdx];
-              if (nodeMesh) {
-                nodeMesh.scale.set(3.0, 3.0, 3.0);
-                
-                // Add a visual flash class temporarily to node label
-                const flashDiv = document.getElementById(`globe-label-${node.id}`);
-                if (flashDiv) {
-                  flashDiv.classList.add('node-quantum-flash');
-                  setTimeout(() => {
-                    flashDiv.classList.remove('node-quantum-flash');
-                  }, 650);
+              if (currentRadius >= dist) {
+                sw.triggeredNodes.add(node.id);
+                const nodeMesh = nodeMeshes[nodeIdx];
+                if (nodeMesh) {
+                  nodeMesh.scale.set(3.0, 3.0, 3.0); // Moderate reactive scale
+                  
+                  // Add a visual flash class temporarily to node label
+                  const flashDiv = document.getElementById(`globe-label-${node.id}`);
+                  if (flashDiv) {
+                    flashDiv.classList.add('node-quantum-flash');
+                    setTimeout(() => {
+                      flashDiv.classList.remove('node-quantum-flash');
+                    }, 650);
+                  }
                 }
               }
-            }
-          });
+            });
         }
       }
 

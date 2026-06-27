@@ -16,8 +16,11 @@ import { ResponsiveContainer, ComposedChart, Area, Line, Scatter, XAxis, YAxis, 
 
 // Custom components
 import AccountsList from './components/AccountsList';
+import TreasuryCommandCenter from './components/TreasuryCommandCenter';
 import BlocksChain from './components/BlocksChain';
 import TransactionsHistory from './components/TransactionsHistory';
+import EvidencePortal from './components/EvidencePortal';
+import TrustVault from './components/TrustVault';
 import ManualTransactionForm from './components/ManualTransactionForm';
 import ConnectedAppsList from './components/ConnectedAppsList';
 import RegisterIntegrationForm from './components/RegisterIntegrationForm';
@@ -25,6 +28,18 @@ import CommandCenterView from './components/CommandCenterView';
 import SovereignLanding from './components/SovereignLanding';
 import MobileTerminalView from './components/MobileTerminalView';
 import backgroundMap from './assets/images/sovr_background_map_1781167617436.png';
+
+// Sub-modules for tabs
+import TransactionWorkspace from './components/TransactionWorkspace';
+import NodeRegistry from './components/NodeRegistry';
+import ConnectedSystems from './components/ConnectedSystems';
+import AuditVault from './components/AuditVault';
+import OrchestrationEngine from './components/OrchestrationEngine';
+import AdministrationView from './components/AdministrationView';
+import SovereignGlobe from './components/SovereignGlobe';
+import ComplianceHub from './components/ComplianceHub';
+import GatewayFabric from './components/GatewayFabric';
+import MissionControlView from './components/MissionControlView';
 
 // Lucide Icons
 import { 
@@ -52,7 +67,9 @@ import {
   X,
   Shield,
   Check,
-  AlertCircle
+  AlertCircle,
+  FileText,
+  Settings
 } from 'lucide-react';
 
 export default function App() {
@@ -73,31 +90,51 @@ export default function App() {
   }, []);
 
   // States
-  const [accounts, setAccounts] = useState<LedgerAccount[]>([]);
-  const [apps, setApps] = useState<ConnectedApp[]>([]);
-  const [chain, setChain] = useState<HashBlock[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [volumeSeries, setVolumeSeries] = useState<any[]>([]);
-  const [notifications, setNotifications] = useState<any[]>([]);
-  const [health, setHealth] = useState<SystemHealth>({
-    ledgerOk: true,
-    chainVerified: true,
-    pendingTxns: 0,
-    p99LatencyMs: 0,
-    nodesOnline: 0,
-    nodesTotal: 0,
-    lastSeal: new Date().toISOString()
+  const [accounts, setAccounts] = useState<LedgerAccount[]>(() => [...INITIAL_ACCOUNTS]);
+  const [apps, setApps] = useState<ConnectedApp[]>(() => [...INITIAL_APPS]);
+  const [chain, setChain] = useState<HashBlock[]>(() => {
+    const list: HashBlock[] = [];
+    let prev = "0".repeat(64);
+    for (let h = 0; h < 24; h++) {
+      const merkle = sha256(`merkle-${h}-${generateUUIDShort()}`);
+      const blockHash = sha256(`${h}-${prev}-${merkle}`);
+      list.push({
+        id: `blk_${h}`,
+        height: h,
+        hash: blockHash,
+        prevHash: prev,
+        txnCount: Math.floor(Math.random() * (42 - 8 + 1)) + 8,
+        merkleRoot: merkle,
+        sealedAt: new Date(Date.now() - (24 - h) * 300 * 1000).toISOString(),
+        verified: true
+      });
+      prev = blockHash;
+    }
+    return list.reverse(); // newest block first
   });
 
-  // CommandCenter States
-  const [pulseCount, setPulseCount] = useState(0);
-  const [pendingVerifications, setPendingVerifications] = useState(0);
-  const [timelineEvents, setTimelineEvents] = useState<any[]>([]);
-  const [ingestionItems, setIngestionItems] = useState<any[]>([]);
-  const [agents, setAgents] = useState<any[]>([]);
-  const [anomalies, setAnomalies] = useState<any[]>([]);
-  const [geoNodes, setGeoNodes] = useState<any[]>([]);
-  const [routes, setRoutes] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>(() => {
+    // Generate initial transaction pool
+    const list: Transaction[] = [];
+    let prev = "0".repeat(64);
+    for (let t = 0; t < 14; t++) {
+      const tx = generateRandomTxn(prev, INITIAL_ACCOUNTS);
+      tx.createdAt = new Date(Date.now() - (14 - t) * 120 * 1000).toISOString();
+      list.push(tx);
+      prev = tx.hash;
+    }
+    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  });
+
+  const [volumeSeries, setVolumeSeries] = useState<any[]>(() => 
+    Array.from({ length: 65 }).map((_, idx) => ({
+      tick: idx,
+      settlementVelocity: Math.floor(Math.random() * (78 - 25 + 1)) + 25,
+      treasuryFlow: Math.floor(Math.random() * (460000 - 130000 + 1)) + 130000,
+      networkLoad: Math.floor(Math.random() * (85 - 35 + 1)) + 35,
+      apiThroughput: Math.floor(Math.random() * (1350 - 450 + 1)) + 450
+    }))
+  );
 
   const [selectedZoom, setSelectedZoom] = useState<'1m' | '5m' | '15m' | 'all'>('1m');
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
@@ -105,35 +142,64 @@ export default function App() {
   const [isProofExpanded, setIsProofExpanded] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
 
-  // Fetch state from API
-  const fetchState = async () => {
-    try {
-      const res = await fetch('/api/state');
-      const data = await res.json();
-      setAccounts(data.accounts);
-      setApps(data.apps);
-      setChain(data.chain);
-      setTransactions(data.transactions);
-      setVolumeSeries(data.volumeSeries);
-      setNotifications(data.notifications);
-      setHealth(data.health);
-      setPulseCount(data.pulseCount);
-      setPendingVerifications(data.pendingVerifications);
-      setTimelineEvents(data.timelineEvents);
-      setIngestionItems(data.ingestionItems);
-      setAgents(data.agents);
-      setAnomalies(data.anomalies);
-      setGeoNodes(data.geoNodes);
-      setRoutes(data.routes);
-    } catch (err) {
-      console.error('Failed to fetch state:', err);
-    }
+  // Layout hierarchy & tabs states
+  const [activeMainTab, setActiveMainTab] = useState<string>('Overview');
+  const [selectedTxIdForDrilldown, setSelectedTxIdForDrilldown] = useState<string | null>(null);
+  const [liveEvents, setLiveEvents] = useState<any[]>([]);
+  const [selectedGlobeNodeId, setSelectedGlobeNodeId] = useState<string | null>(null);
+  const [selectedGlobeRouteId, setSelectedGlobeRouteId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const res = await fetch('/api/events');
+        const data = await res.json();
+        if (data.success) {
+          setLiveEvents(data.events || []);
+        }
+      } catch (err) {
+        // Silently ignore polling errors to prevent console spam during dev server restarts
+        // or transient network issues.
+      }
+    };
+    fetchEvents();
+    const interval = setInterval(fetchEvents, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Standalone Verification route detection
+  const [verifyRouteTxnId, setVerifyRouteTxnId] = useState<string | null>(() => {
+    const match = window.location.pathname.match(/^\/verify\/([^/]+)/);
+    return match ? match[1] : null;
+  });
+
+  const handleExitStandaloneVerify = () => {
+    setVerifyRouteTxnId(null);
+    window.history.pushState({}, '', '/');
   };
+
+  // Simulated notification center logs
+  const [notifications, setNotifications] = useState<any[]>([
+    { id: 1, type: 'API', message: 'Inbound TLS port connection handshaking initialized with SOVRPay Swedish ingress', time: '1 min ago', status: 'info' },
+    { id: 2, type: 'TREASURY', message: 'Large collateral fund transfer of +120,000 SVT completed and matched algebraically', time: '4 mins ago', status: 'warning' },
+    { id: 3, type: 'SYSTEM', message: 'Consensus quorum signed authority seal for ledger height #1428 matches Merkle root', time: '12 mins ago', status: 'success' },
+    { id: 4, type: 'SECURITY', message: 'Scheduled algorithmic invariant check passed across all 6 validator instances', time: '35 mins ago', status: 'success' },
+  ]);
+
+  const [health, setHealth] = useState<SystemHealth>(() => ({
+    ledgerOk: true,
+    chainVerified: true,
+    pendingTxns: 2,
+    p99LatencyMs: 18,
+    nodesOnline: 6,
+    nodesTotal: 6,
+    lastSeal: new Date().toISOString()
+  }));
 
   const [isSealingNow, setIsSealingNow] = useState(false);
 
   // Reference for tick timer
-  const tickTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const tickTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // CALCULATE DERIVED VALUES (from Swift Core matching equations)
   const totalAssetsUSD = accounts
@@ -150,65 +216,145 @@ export default function App() {
 
   const pendingCount = transactions.filter(txn => txn.state === 'pending').length;
 
-  // POST MANUAL TRANSACTION (via API)
-  const handlePostTransaction = async (params: any) => {
-    try {
-      const res = await fetch('/api/transactions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(params)
-      });
-      if (res.ok) fetchState();
-    } catch (err) {
-      console.error('Failed to post transaction:', err);
-    }
+  // Manual block seal trigger
+  const sealBlock = () => {
+    setChain(prevChain => {
+      const latestBlock = prevChain[0];
+      const h = (latestBlock?.height ?? 0) + 1;
+      const prev = latestBlock?.hash ?? "0".repeat(64);
+      const merkle = sha256(`merkle-${h}-${generateUUIDShort()}`);
+      const blockHash = sha256(`${h}-${prev}-${merkle}`);
+
+      const nextBlock: HashBlock = {
+        id: `blk_${h}`,
+        height: h,
+        hash: blockHash,
+        prevHash: prev,
+        txnCount: Math.floor(Math.random() * (42 - 8 + 1)) + 8,
+        merkleRoot: merkle,
+        sealedAt: new Date().toISOString(),
+        verified: true
+      };
+
+      const newChain = [nextBlock, ...prevChain];
+      if (newChain.length > 48) {
+        newChain.pop();
+      }
+      return newChain;
+    });
+
+    setHealth(prev => ({
+      ...prev,
+      lastSeal: new Date().toISOString()
+    }));
   };
 
-  const handleForceSeal = async () => {
-    setIsSealingNow(true);
-    try {
-      await fetch('/api/chain/seal', { method: 'POST' });
-      fetchState();
-    } catch (err) {
-      console.error('Failed to force seal:', err);
-    } finally {
-      setTimeout(() => setIsSealingNow(false), 600);
-    }
-  };
+  // POST MANUAL TRANSACTION (Debit / Credit updates)
+  const handlePostTransaction = (params: {
+    debitId: string;
+    creditId: string;
+    amountMinor: number;
+    denomination: Denomination;
+    rail: Rail;
+    memo: string;
+    originApp: string;
+  }) => {
+    const id = `txn_${generateUUIDShort()}`;
+    const latestTx = transactions[0];
+    const prevHash = latestTx?.hash ?? "0".repeat(64);
+    
+    const canonicalStr = `${id}|${params.rail}|${params.amountMinor}|${params.denomination}|${prevHash}`;
+    const txnHash = sha256(canonicalStr);
 
-  const handleTriggerAnomaly = async () => {
-    try {
-      await fetch('/api/anomalies/trigger', { method: 'POST' });
-      fetchState();
-    } catch (err) {
-      console.error('Failed to trigger anomaly:', err);
-    }
-  };
+    const debitAccount = accounts.find(a => a.id === params.debitId);
+    const creditAccount = accounts.find(a => a.id === params.creditId);
 
-  const handleDismissAnomaly = async (id: string) => {
-    try {
-      await fetch('/api/anomalies/dismiss', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id })
-      });
-      fetchState();
-    } catch (err) {
-      console.error('Failed to dismiss anomaly:', err);
-    }
-  };
+    if (!debitAccount || !creditAccount) return;
 
-  const handleRegisterApp = async (newApp: any) => {
-    try {
-      const res = await fetch('/api/apps/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newApp)
-      });
-      if (res.ok) fetchState();
-    } catch (err) {
-      console.error('Failed to register app:', err);
-    }
+    const entries = [
+      {
+        id: generateUUIDShort(),
+        accountId: params.debitId,
+        accountCode: debitAccount.code,
+        debitMinor: params.amountMinor,
+        creditMinor: 0
+      },
+      {
+        id: generateUUIDShort(),
+        accountId: params.creditId,
+        accountCode: creditAccount.code,
+        debitMinor: 0,
+        creditMinor: params.amountMinor
+      }
+    ];
+
+    const newTxn: Transaction = {
+      id,
+      hash: txnHash,
+      prevHash,
+      state: 'posted',
+      rail: params.rail,
+      denomination: params.denomination,
+      amountMinor: params.amountMinor,
+      memo: params.memo,
+      originApp: params.originApp,
+      createdAt: new Date().toISOString(),
+      entries
+    };
+
+    // Update LEDGER balances IMMEDIATELY (since it is POSTED)
+    setAccounts(prevAccounts => 
+      prevAccounts.map(account => {
+        let balanceMinor = account.balanceMinor;
+        if (account.id === params.debitId) {
+          balanceMinor += params.amountMinor; // Debit entry algebraic sum
+        }
+        if (account.id === params.creditId) {
+          balanceMinor -= params.amountMinor; // Credit entry algebraic sum
+        }
+        return { ...account, balanceMinor };
+      })
+    );
+
+    setTransactions(prev => [newTxn, ...prev].slice(0, 80));
+    setVolumeSeries(prev => {
+      const lastTick = prev.length ? prev[prev.length - 1].tick : 0;
+      const nextPoint = {
+        tick: lastTick + 1,
+        settlementVelocity: Math.floor(Math.random() * (78 - 25 + 1)) + 25,
+        treasuryFlow: Math.floor(Math.random() * (460000 - 130000 + 1)) + 130000,
+        networkLoad: Math.floor(Math.random() * (85 - 35 + 1)) + 35,
+        apiThroughput: Math.floor(Math.random() * (1350 - 450 + 1)) + 450
+      };
+      const newSeries = [...prev, nextPoint];
+      return newSeries.length > 100 ? newSeries.slice(1) : newSeries;
+    });
+
+    // Send asynchronous transactional trigger to backend Evidence Engine
+    fetch('/api/evidence/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        transactionId: id,
+        debitAccount: debitAccount.code,
+        creditAccount: creditAccount.code,
+        amount: params.amountMinor,
+        currency: params.denomination,
+        eventType: params.rail === 'svt' ? 'MULTIRAIL_TRANSFER' : 'CROSSBORDER_CLEARING',
+        operator: 'SYSTEM_COMMANDER_OP',
+        metadata: {
+          memo: params.memo,
+          originApp: params.originApp
+        }
+      })
+    })
+    .then(res => res.json())
+    .then(resData => {
+      console.log('Immutable Evidence registered for transaction:', id, resData);
+    })
+    .catch(err => {
+      console.error('Failed to register immutable evidence:', err);
+    });
   };
 
   const handleExportLogs = () => {
@@ -228,18 +374,166 @@ export default function App() {
   };
 
 
-  // LIVE API POLLING (Every 1400ms)
+  // LIVE SIMULATOR WEBSOCKET GRAPH TICK (Every 1400ms)
   useEffect(() => {
-    fetchState();
     if (!isConnected) {
       if (tickTimerRef.current) clearInterval(tickTimerRef.current);
       return;
     }
-    tickTimerRef.current = setInterval(fetchState, 1400);
+
+    tickTimerRef.current = setInterval(() => {
+      // 1. Generate live transaction payload and update ledger in sync
+      setAccounts(prevAccounts => {
+        let updatedAccounts = [...prevAccounts];
+
+        setTransactions(prevTxns => {
+          const prevHash = prevTxns[0]?.hash ?? "0".repeat(64);
+          const nextTx = generateRandomTxn(prevHash, prevAccounts);
+
+          // Update general ledger balances if transaction is Posted on boot
+          const freshAccounts = prevAccounts.map(acc => {
+            let balanceMinor = acc.balanceMinor;
+            if (nextTx.state === 'posted') {
+              const debitEntry = nextTx.entries.find(e => e.accountId === acc.id);
+              const creditEntry = nextTx.entries.find(e => e.accountId === acc.id);
+              if (debitEntry) {
+                balanceMinor += debitEntry.debitMinor;
+              }
+              if (creditEntry) {
+                balanceMinor -= creditEntry.creditMinor;
+              }
+            }
+            return { ...acc, balanceMinor };
+          });
+
+          // Occasionally promote an older pending transaction to posted
+          let finalTxnsList = [nextTx, ...prevTxns];
+          if (Math.random() < 0.25) {
+            const pendingIndex = finalTxnsList.findIndex(t => t.state === 'pending');
+            if (pendingIndex !== -1) {
+              const oldPending = finalTxnsList[pendingIndex];
+              const promotedTx: Transaction = {
+                ...oldPending,
+                state: 'posted'
+              };
+              finalTxnsList[pendingIndex] = promotedTx;
+
+              // Apply promoted transaction's debit/credits to finalized ledger state
+              for (let i = 0; i < freshAccounts.length; i++) {
+                const acc = freshAccounts[i];
+                const dEntry = promotedTx.entries.find(e => e.accountId === acc.id);
+                const cEntry = promotedTx.entries.find(e => e.accountId === acc.id);
+                if (dEntry) {
+                  freshAccounts[i].balanceMinor += dEntry.debitMinor;
+                }
+                if (cEntry) {
+                  freshAccounts[i].balanceMinor -= cEntry.creditMinor;
+                }
+              }
+            }
+          }
+
+          // Bound list sizes
+          if (finalTxnsList.length > 80) {
+            finalTxnsList = finalTxnsList.slice(0, 80);
+          }
+
+          updatedAccounts = freshAccounts;
+          return finalTxnsList;
+        });
+
+        return updatedAccounts;
+      });
+
+      // 2. Volume sliding sparkline update
+      setVolumeSeries(prevSeries => {
+        const lastTick = prevSeries.length ? prevSeries[prevSeries.length - 1].tick : 0;
+        const nextPoint = {
+          tick: lastTick + 1,
+          settlementVelocity: Math.floor(Math.random() * (78 - 25 + 1)) + 25,
+          treasuryFlow: Math.floor(Math.random() * (460000 - 130000 + 1)) + 130000,
+          networkLoad: Math.floor(Math.random() * (85 - 35 + 1)) + 35,
+          apiThroughput: Math.floor(Math.random() * (1350 - 450 + 1)) + 450
+        };
+        const newSeries = [...prevSeries, nextPoint];
+        return newSeries.length > 150 ? newSeries.slice(1) : newSeries;
+      });
+
+      // 3. Jitter connected apps session feeds
+      setApps(prevApps => 
+        prevApps.map(app => {
+          const sessionsJitter = Math.floor(Math.random() * (4 - (-3) + 1)) + (-3);
+          const txnJitter = (Math.random() * (1.4 - (-1.2))) + (-1.2);
+          return {
+            ...app,
+            activeSessions: Math.max(0, app.activeSessions + sessionsJitter),
+            txnPerMin: Math.max(0, app.txnPerMin + txnJitter),
+            lastHeartbeat: new Date().toISOString()
+          };
+        })
+      );
+
+      // 4. Sealer automatic trigger (1 in 9 times chance)
+      if (Math.random() < 0.12) {
+        sealBlock();
+      }
+
+      // 5. System Health jitter
+      setHealth(prev => {
+        const latencyJitter = Math.floor(Math.random() * (3 - (-3) + 1)) + (-3);
+        return {
+          ...prev,
+          pendingTxns: pendingCount,
+          p99LatencyMs: Math.max(8, Math.min(140, prev.p99LatencyMs + latencyJitter))
+        };
+      });
+
+      // 6. Dynamic high-fidelity notification center updates
+      if (Math.random() < 0.14) {
+        const categories = ['API', 'TREASURY', 'SYSTEM', 'SECURITY', 'AUDIT'];
+        const randomCat = categories[Math.floor(Math.random() * categories.length)];
+        let msg = '';
+        let status = 'info';
+
+        if (randomCat === 'API') {
+          const apiActions = [
+            'Client credential handshake resolved with Basalt Console Node #1',
+            'SOVR UnifiedPay Hub webhook ingestion queue lag detected: 42ms',
+            'SOVR API channel heartbeats successfully acknowledged from all 6 authorities'
+          ];
+          msg = apiActions[Math.floor(Math.random() * apiActions.length)];
+          status = msg.includes('lag') ? 'warning' : 'success';
+        } else if (randomCat === 'TREASURY') {
+          msg = `Collateralized asset settlement of +${(Math.floor(Math.random() * 85000) + 15000).toLocaleString()} SVT complete; algebraic offset verified`;
+          status = 'info';
+        } else if (randomCat === 'SYSTEM') {
+          msg = `Cryptographic sealer validator block #${Math.floor(Math.random() * 20000 + 12000)} auto-probability consensus attained`;
+          status = 'success';
+        } else {
+          msg = 'Periodic multi-rail double-entry trial balance checked: DEBITS === CREDITS';
+          status = 'success';
+        }
+
+        setNotifications(prev => [
+          { id: Date.now() + Math.random(), type: randomCat, message: msg, time: 'Just now', status },
+          ...prev.slice(0, 15)
+        ]);
+      }
+
+    }, 1400);
+
     return () => {
       if (tickTimerRef.current) clearInterval(tickTimerRef.current);
     };
-  }, [isConnected]);
+  }, [isConnected, pendingCount]);
+
+  const handleForceSeal = () => {
+    setIsSealingNow(true);
+    setTimeout(() => {
+      sealBlock();
+      setIsSealingNow(false);
+    }, 600);
+  };
 
   // Convert pure volume series numbers array into structural recharts dictionary
   const chartData = React.useMemo(() => {
@@ -256,6 +550,23 @@ export default function App() {
       timestamp: new Date(Date.now() - (points.length - idx) * 1400).toLocaleTimeString()
     }));
   }, [volumeSeries, selectedZoom]);
+
+  if (verifyRouteTxnId) {
+    return (
+      <div className="relative min-h-screen bg-[#050508]">
+        {/* Floating exit button to return back to dashboard */}
+        <div className="fixed top-4 left-4 z-[99999] font-mono">
+          <button
+            onClick={handleExitStandaloneVerify}
+            className="px-3 py-1.5 bg-[#0a0a14] hover:bg-slate-900 border border-slate-800 text-xs text-slate-400 hover:text-white rounded flex items-center gap-1.5 transition-all cursor-pointer shadow-lg"
+          >
+            ← Exit Public Portal
+          </button>
+        </div>
+        <EvidencePortal transactionId={verifyRouteTxnId} standalone={true} />
+      </div>
+    );
+  }
 
   return (
     <AnimatePresence mode="wait">
@@ -292,14 +603,6 @@ export default function App() {
           clearNotifications={() => setNotifications([])}
           totalSVT={totalSVT}
           totalAssetsUSD={totalAssetsUSD}
-          pulseCount={pulseCount}
-          pendingVerifications={pendingVerifications}
-          timelineEvents={timelineEvents}
-          ingestionItems={ingestionItems}
-          agents={agents}
-          anomalies={anomalies}
-          geoNodes={geoNodes}
-          routes={routes}
         />
       ) : (
         <motion.div
@@ -319,11 +622,13 @@ export default function App() {
             />
           </div>
 
-      {/* Top Ambient Tech Border line */}
-      <div className="h-1 bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-500 animate-pulse w-full shadow-[0_0_8px_#06b6d4] relative z-10" />
+      {/* Sticky Top Bar & Global Administrative Header Container */}
+      <div className="sticky top-0 z-40 w-full flex flex-col">
+        {/* Top Ambient Tech Border line */}
+        <div className="h-1 bg-gradient-to-r from-cyan-500 via-indigo-500 to-emerald-500 animate-pulse w-full shadow-[0_0_8px_#06b6d4] relative z-50" />
 
-      {/* Global Administrative Header */}
-      <header id="site-global-header" className="border-b border-[#2a2a35]/65 bg-[#0c0c12]/85 backdrop-blur-md sticky top-0 z-40 px-4 py-3.5 shadow-sm">
+        {/* Global Administrative Header */}
+        <header id="site-global-header" className="border-b border-[#2a2a35]/65 bg-[#0c0c12]/85 backdrop-blur-md px-4 py-3.5 shadow-sm">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 relative flex items-center justify-center">
@@ -450,9 +755,46 @@ export default function App() {
           </div>
         </div>
       </header>
+    </div>
 
       {/* Main Core View Area */}
       <main id="primary-bento-viewport" className="relative z-10 max-w-7xl mx-auto px-4 mt-8 space-y-6">
+
+        {/* 8-TAB NAVIGATION BAR */}
+        <div id="main-navigation-tabs" className="border border-[#2a2a35]/60 bg-[#07070b]/90 backdrop-blur-xl rounded-lg p-2 flex items-center gap-1 overflow-x-auto scrollbar-thin">
+          {[
+            { name: 'Overview', icon: Activity, desc: 'Operational dashboard & real-time telemetry' },
+            { name: 'Network', icon: Globe, desc: '3D Spatial Globe & global node registry' },
+            { name: 'Treasury', icon: Coins, desc: 'Double-entry balance sheets & assets' },
+            { name: 'Settlement', icon: Layers, desc: 'Liquidity settlement rails' },
+            { name: 'Trust Vault', icon: ShieldCheck, desc: 'Ecosystem, verification & cryptographic trust explorer' },
+            { name: 'Compliance', icon: Shield, desc: 'Audit vault & regulatory logs' },
+            { name: 'Gateway Fabric', icon: Radio, desc: 'Ecosystem & API control plane' },
+            { name: 'Administration', icon: Settings, desc: 'System entity configuration layer' }
+          ].map(tab => {
+            const IconComponent = tab.icon;
+            const isTabActive = activeMainTab === tab.name;
+            return (
+              <button
+                key={tab.name}
+                onClick={() => {
+                  setActiveMainTab(tab.name);
+                  // If switching tabs, minimize individual transaction drilldowns to avoid confusion
+                  setSelectedTxIdForDrilldown(null);
+                }}
+                className={`flex items-center gap-2 px-3.5 py-2.5 rounded text-[10.5px] font-bold tracking-wider uppercase font-mono transition-all border shrink-0 cursor-pointer ${
+                  isTabActive
+                    ? 'bg-cyan-500/10 text-cyan-300 border-cyan-500/40 shadow-[0_0_8px_rgba(34,211,238,0.1)]'
+                    : 'bg-transparent text-white/50 border-transparent hover:text-white hover:bg-white/5'
+                }`}
+                title={tab.desc}
+              >
+                <IconComponent className={`w-4 h-4 ${isTabActive ? 'text-cyan-400' : 'text-white/40'}`} />
+                <span>{tab.name}</span>
+              </button>
+            );
+          })}
+        </div>
         
         {/* NETWORK GLOBAL KPI PANEL */}
         <div id="system-kpi-row" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -538,404 +880,139 @@ export default function App() {
             <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-emerald-500/30" />
           </div>
 
-        </div>
+        </div>        {/* TRANSACTION DRILLDOWN WORKSPACE */}
+        <AnimatePresence>
+          {selectedTxIdForDrilldown && (
+            <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+              {/* Backdrop dismiss */}
+              <div className="absolute inset-0 cursor-default" onClick={() => setSelectedTxIdForDrilldown(null)} />
+              
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="relative w-full max-w-4xl z-10"
+              >
+                <TransactionWorkspace 
+                  transactionId={selectedTxIdForDrilldown} 
+                  onClose={() => setSelectedTxIdForDrilldown(null)}
+                  formatCurrency={formatCurrency}
+                />
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
-        {/* TELEMETRY CHART SECTION */}
-        <div id="central-sparkline-graph-panel" className="bg-[#0c0c12]/90 border border-[#2a2a35] rounded-lg p-5 backdrop-blur-md">
-          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-            {/* Chart Area */}
-            <div className="lg:col-span-3 space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div>
-                  <h2 id="sparkline-title" className="text-xs font-bold uppercase tracking-widest text-white/90 font-display flex items-center gap-2">
-                    <TrendingUp className="w-4 h-4 text-cyan-400" />
-                    Ledger Transaction Velocity Stream 2.0
-                  </h2>
-                  <p className="text-[10px] text-white/40 uppercase tracking-wider font-mono">Multi-Layer telemetry mapping of validation nodes, network throughput, and liquid volume</p>
-                </div>
-                
-                {/* Real-time zoom controllers */}
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-1 bg-[#050507] p-1 border border-[#2a2a35] rounded-sm">
-                    {(['1m', '5m', '15m', 'all'] as const).map(zoom => (
-                      <button
-                        key={zoom}
-                        onClick={() => setSelectedZoom(zoom)}
-                        className={`px-2.5 py-1 rounded-sm font-mono text-[9px] uppercase font-bold transition-all cursor-pointer ${
-                          selectedZoom === zoom ? 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/35' : 'text-white/30 border border-transparent hover:text-white/50'
-                        }`}
-                      >
-                        {zoom}
-                      </button>
-                    ))}
-                  </div>
+        {/* CONDITIONALLY RENDERED TABS */}
+        {activeMainTab === 'Overview' && (
+          <div className="animate-fadeIn">
+            <MissionControlView 
+              accounts={accounts}
+              transactions={transactions}
+              setActiveTab={setActiveMainTab}
+              formatCurrency={formatCurrency}
+            />
+          </div>
+        )}
 
-                  <div className="flex items-center gap-1.5 bg-[#050507] px-2.5 py-1 rounded border border-[#2a2a35] font-mono text-[10px]">
-                    <span className="text-white/40">DRIFT:</span>
-                    <span className="text-[#02c39a] font-bold">
-                      {((volumeSeries[volumeSeries.length - 1]?.settlementVelocity) || 0).toFixed(1)} TKS
-                    </span>
-                  </div>
-                </div>
+        {activeMainTab === 'Network' && (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch animate-fadeIn">
+            {/* Left: Spatial Globe View (7 columns) */}
+            <div className="lg:col-span-7 bg-[#08080c] border border-[#2a2a35] rounded-lg p-5 flex flex-col justify-between h-[450px] lg:h-auto min-h-[420px] relative overflow-hidden shadow-2xl">
+              <div className="z-10">
+                <span className="text-white/40 uppercase text-[9px] font-bold tracking-widest block border-b border-[#2a2a35]/65 pb-1 flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-cyan-400" />
+                  Map: Spatial Capital Router Telemetry
+                </span>
+                <span className="text-[8px] text-white/20 block mt-1 uppercase">Interconnected validation nodes across 4 global operating zones</span>
               </div>
 
-              {/* Multi-layered custom composed chart */}
-              <div className="h-[160px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <ComposedChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-                    <XAxis dataKey="timestamp" stroke="#ffffff" fontSize={8} tickLine={false} axisLine={false} opacity={0.2} style={{ fontSize: '7.5px', fontFamily: 'monospace' }} />
-                    <YAxis yAxisId="tps" orientation="left" stroke="#ffffff" opacity={0.2} style={{ fontSize: '7.5px', fontFamily: 'monospace' }} tickLine={false} axisLine={false} />
-                    <YAxis yAxisId="flow" orientation="right" stroke="#ffffff" opacity={0.1} style={{ fontSize: '7.5px', fontFamily: 'monospace' }} tickLine={false} axisLine={false} />
-                    <defs>
-                      <linearGradient id="gradientFlow" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#eab308" stopOpacity={0.06}/>
-                        <stop offset="95%" stopColor="#eab308" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="gradientVelocity" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#02c39a" stopOpacity={0.25}/>
-                        <stop offset="95%" stopColor="#02c39a" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    
-                    <Tooltip 
-                      content={({ active, payload }) => {
-                        if (!active || !payload || !payload.length) return null;
-                        const data = payload[0].payload;
-                        return (
-                          <div className="bg-[#020617]/95 border border-[#2a2a35] p-3 rounded-sm backdrop-blur shadow-[0_4px_12px_rgba(0,0,0,0.5)] font-mono text-[9.5px] space-y-1.5 text-white/90">
-                            <div className="border-b border-[#2a2a35] pb-1 text-white/40 flex items-center justify-between gap-3 text-[8.5px]">
-                              <span>Telemetry Data Payload</span>
-                              <span>{data.timestamp}</span>
-                            </div>
-                            <div>
-                              <span className="text-[#02c39a]">● Core Velocity:</span> <span className="font-bold">{data.settlementVelocity} TPS</span>
-                            </div>
-                            <div>
-                              <span className="text-amber-400">● Treasury Flow:</span> <span className="font-bold">+{data.treasuryFlow.toLocaleString()} SVT</span>
-                            </div>
-                            <div>
-                              <span className="text-purple-400">● Network Load:</span> <span className="font-bold">{data.networkLoad}% UTIL</span>
-                            </div>
-                            <div>
-                              <span className="text-sky-400">● API Throughput:</span> <span className="font-bold">{data.apiThroughput} pkts/s</span>
-                            </div>
-                            <div className="border-t border-[#2a2a35] pt-1 text-[8px] text-white/30 uppercase flex justify-between gap-4 font-bold">
-                              <span>Status: COHESIVE</span>
-                              <span>Age: 1.4s cycle</span>
-                            </div>
-                          </div>
-                        );
-                      }}
-                    />
-                    {/* Layer 2: Treasury Flow (Gold Area, Asset movement) */}
-                    <Area yAxisId="flow" type="monotone" dataKey="treasuryFlow" stroke="#eab308" strokeWidth={1} fillOpacity={1} fill="url(#gradientFlow)" opacity={0.65} name="Treasury Flow" />
-                    
-                    {/* Layer 1: Settlement Velocity (Green Area, Transactions/sec) */}
-                    <Area yAxisId="tps" type="monotone" dataKey="settlementVelocity" stroke="#02c39a" strokeWidth={1.5} fillOpacity={1} fill="url(#gradientVelocity)" name="Settlement Velocity" />
-                    
-                    {/* Layer 3: Network Load (Purple line, Gateway utilization) */}
-                    <Line yAxisId="tps" type="monotone" dataKey="networkLoad" stroke="#a855f7" strokeWidth={1} strokeDasharray="3 3" dot={false} opacity={0.5} name="Network Load" />
-                    
-                    {/* Layer 4: API Throughput (Blue Scatter Points, Live integration activity) */}
-                    <Scatter yAxisId="tps" dataKey="apiThroughput" fill="#38bdf8" opacity={0.25} style={{ pointerEvents: 'none' }} shape={(props: any) => {
-                      const { cx, cy } = props;
-                      // Bound coordinates nicely
-                      return <circle cx={cx} cy={Math.max(10, Math.min(145, cy))} r={2} fill="#38bdf8" stroke="none" opacity={0.4} />;
-                    }} />
-                  </ComposedChart>
-                </ResponsiveContainer>
+              {/* 3D WebGL Sovereign Globe */}
+              <div className="absolute inset-0 flex items-center justify-center p-4 mt-6">
+                <SovereignGlobe 
+                  geoNodes={[
+                    { id: 'NY_LC', name: 'NY Ledger Core', role: 'Ledger Settlement Host', region: 'North America', lat: 40.7128, lon: -74.0060, status: 'ONLINE', latency: 12, cpu: 24, ram: 42, disk: 68, workers: 1522, txnsProcessed: 1824552, settlementValue: '$84.3M', lastSeal: 'blk_18', lastConsensus: '0.8s ago', softwareVersion: 'v5.9.2', trustScore: '99.9%' },
+                    { id: 'LDN_R', name: 'London Routing', role: 'Consensus Coordinator', region: 'Western Europe', lat: 51.5072, lon: -0.1276, status: 'ONLINE', latency: 15, cpu: 18, ram: 37, disk: 52, workers: 1140, txnsProcessed: 1420550, settlementValue: '$65.1M', lastSeal: 'blk_19', lastConsensus: '1.1s ago', softwareVersion: 'v5.9.2', trustScore: '100%' },
+                    { id: 'ZRH_T', name: 'Zurich Treasury', role: 'Vault Custody Agent', region: 'Central Europe', lat: 47.3769, lon: 8.5417, status: 'ONLINE', latency: 16, cpu: 31, ram: 50, disk: 61, workers: 920, txnsProcessed: 981440, settlementValue: '$112.4M', lastSeal: 'blk_17', lastConsensus: '0.9s ago', softwareVersion: 'v5.9.1', trustScore: '99.9%' },
+                    { id: 'SGP_G', name: 'Singapore Gate', role: 'Asynchronous Gateway', region: 'Southeast Asia', lat: 1.3521, lon: 103.8198, status: 'ONLINE', latency: 32, cpu: 48, ram: 58, disk: 74, workers: 2150, txnsProcessed: 2891460, settlementValue: '$144.8M', lastSeal: 'blk_20', lastConsensus: '1.4s ago', softwareVersion: 'v5.9.2', trustScore: '99.9%' }
+                  ]} 
+                  routes={[
+                    { id: 'r1', fromId: 'NY_LC', toId: 'LDN_R', avgTps: 45, volume: '$12.4M', latency: 14, successRate: 99.99, drift: 0.2, loss: 0.0, consensus: 'SYNCHRONOUS' },
+                    { id: 'r2', fromId: 'LDN_R', toId: 'ZRH_T', avgTps: 32, volume: '$8.2M', latency: 8, successRate: 100.0, drift: 0.05, loss: 0.0, consensus: 'SYNCHRONOUS' },
+                    { id: 'r3', fromId: 'ZRH_T', toId: 'SGP_G', avgTps: 28, volume: '$14.1M', latency: 42, successRate: 99.98, drift: 0.4, loss: 0.01, consensus: 'ASYNCHRONOUS' }
+                  ]} 
+                  selectedNodeId={selectedGlobeNodeId} 
+                  selectedRouteId={selectedGlobeRouteId} 
+                  onSelectNode={setSelectedGlobeNodeId} 
+                  onSelectRoute={setSelectedGlobeRouteId} 
+                  heatmapOn={true} 
+                />
               </div>
 
-              {/* Horizontal Legend labels */}
-              <div className="flex items-center gap-4 text-[8.5px] font-mono text-white/30 uppercase border-t border-[#2a2a35]/40 pt-2 tracking-wider">
-                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-[#02c39a]" /> Settled Velocity</span>
-                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-400" /> Treasury movement</span>
-                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-purple-400" /> Layer 3 Load limits</span>
-                <span className="flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-sky-400 animate-pulse" /> API Throughput</span>
+              <div className="flex items-center justify-between z-10 text-[8.5px] text-white/35 font-bold uppercase tracking-widest border-t border-[#2a2a35]/50 pt-2 font-mono">
+                <span>Ingress protocol rate: 94.2% compliant</span>
+                <span>4 operating regions mapped</span>
               </div>
             </div>
 
-            {/* GRAPH INSIGHT ENGINE Side panel */}
-            <div id="graph-insight-engine-panel" className="bg-[#050507] border border-[#2a2a35] rounded p-3 text-[10px] font-mono space-y-2.5 flex flex-col justify-between">
-              <div>
-                <span className="text-white/35 uppercase text-[8px] font-bold tracking-widest block border-b border-[#2a2a35]/60 pb-1 flex items-center gap-1.5">
-                  <Activity className="w-3.5 h-3.5 text-[#02c39a] animate-pulse" />
-                  Live Stream Analytics
-                </span>
-
-                <div className="space-y-2 mt-2">
-                  <div className="flex justify-between border-b border-[#2a2a35]/30 pb-1">
-                    <span className="text-white/40">Current Core Speed:</span>
-                    <span className="text-[#02c39a] font-bold">{chartData[chartData.length - 1]?.settlementVelocity ?? 0} TPS</span>
-                  </div>
-
-                  <div className="flex justify-between border-b border-[#2a2a35]/30 pb-1">
-                    <span className="text-white/40">Mean Settlement Velocity:</span>
-                    <span className="text-[#ffffff]/80 font-bold">
-                      {Math.round(chartData.reduce((acc, curr) => acc + (curr.settlementVelocity || 0), 0) / (chartData.length || 1))} TPS
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between border-b border-[#2a2a35]/30 pb-1">
-                    <span className="text-white/40">Peak Execution Rate:</span>
-                    <span className="text-[#02c39a] font-bold">
-                      {Math.max(...chartData.map(d => d.settlementVelocity || 0), 0)} TPS
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between border-b border-[#2a2a35]/30 pb-1" title="Algorithmic invariant offset deviation">
-                    <span className="text-white/40">Live Drift Rate:</span>
-                    <span className="text-amber-400 font-bold">
-                      +{(Math.abs((chartData[chartData.length - 1]?.settlementVelocity || 0) - (chartData[0]?.settlementVelocity || 0)) / 10).toFixed(3)}%
-                    </span>
-                  </div>
-
-                  <div className="flex justify-between" title="Aggregate SVT transferred inside chosen sliding interval">
-                    <span className="text-white/40">Window Net Volume:</span>
-                    <span className="text-amber-500 font-bold">
-                      {chartData.reduce((acc, curr) => acc + (curr.treasuryFlow || 0), 0).toLocaleString()} SVT
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-[#101015] border border-[#2a2a35]/60 p-2 rounded-sm text-[8px] space-y-1">
-                <div className="flex items-center justify-between text-white/30 text-[7px] uppercase font-bold tracking-widest">
-                  <span>Engine status</span>
-                  <span className="text-cyan-400">NOMINAL</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-white/50">Node sync rate:</span>
-                  <span className="text-emerald-400 font-bold">100.0%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-white/50">Settlement compliance:</span>
-                  <span className="text-cyan-300 font-bold">99.998% compliant</span>
-                </div>
-              </div>
+            {/* Right: Global Node Registry Panel (5 columns) */}
+            <div className="lg:col-span-5 border border-[#2a2a35] bg-[#0c0c12]/90 rounded-lg p-5">
+              <NodeRegistry />
             </div>
           </div>
-        </div>
+        )}
 
-        {/* DOUBLE COLUMN LAYOUT: Accounts Ledger & Block Explorer & apps */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          
-          {/* LEFT SUBDIVISION: Accounts General Ledger list & custom submissions (8 cols) */}
-          <div className="lg:col-span-7 xl:col-span-8 space-y-6">
-            
-            {/* Accounts Panel component */}
-            <AccountsList accounts={accounts} />
-
-            {/* Quick manual journal poster */}
-            <ManualTransactionForm 
+        {activeMainTab === 'Treasury' && (
+          <div className="animate-fadeIn">
+            <TreasuryCommandCenter 
               accounts={accounts} 
+              setAccounts={setAccounts} 
+              transactions={transactions} 
               apps={apps} 
               onPostTransaction={handlePostTransaction} 
             />
-
-            {/* Ingress integrations connected apps widget */}
-            <ConnectedAppsList apps={apps} isPaused={!isConnected} />
-
-            {/* NEW API REGISTRATION PANEL */}
-            <RegisterIntegrationForm 
-              onRegister={handleRegisterApp}
-            />
-
           </div>
+        )}
 
-          {/* RIGHT SUBDIVISION: Secure chain seals log & diagnostic info blocks (4 columns) */}
-          <div className="lg:col-span-5 xl:col-span-4 space-y-6">
-            
-            {/* Sealer blocks log component */}
-            <BlocksChain 
-              chain={chain} 
-              onForceSeal={handleForceSeal} 
-              isSealing={isSealingNow} 
-            />
-
-             {/* Interactive network diagnostics cheat panel with Expand Mode */}
-             <div id="diagnostics-card" className="bg-[#0c0c12]/90 border border-[#2a2a35] rounded-lg p-5 backdrop-blur-md shadow-inner transition-all duration-300">
-               <div className="flex items-center justify-between mb-3 border-b border-[#2a2a35] pb-2">
-                 <h3 className="text-xs font-bold uppercase tracking-widest text-white/90 font-display flex items-center gap-2">
-                   <ShieldCheck className="w-4 h-4 text-cyan-400" />
-                   Cryptographic Guard Proofs
-                 </h3>
-                 <button
-                   onClick={() => setIsProofExpanded(!isProofExpanded)}
-                   className="text-[9px] hover:text-[#06b6d4] text-white/40 uppercase font-mono tracking-wider flex items-center gap-1 transition-all cursor-pointer"
-                 >
-                   {isProofExpanded ? (
-                     <>
-                       [COLLAPSE] <ChevronUp className="w-3.5 h-3.5" />
-                     </>
-                   ) : (
-                     <>
-                       [EXPAND MODULE] <ChevronDown className="w-3.5 h-3.5" />
-                     </>
-                   )}
-                 </button>
-               </div>
-               
-               <div className="space-y-2.5 text-xs">
-                 <div className="flex justify-between items-center py-1.5 border-b border-[#2a2a35]/40">
-                   <span className="text-white/50 text-[11px]">Double Entry Algebraic integrity:</span>
-                   <span className="font-mono text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
-                     PASS_MATH
-                   </span>
-                 </div>
-
-                 <div className="flex justify-between items-center py-1.5 border-b border-[#2a2a35]/40">
-                   <span className="text-white/50 text-[11px]">SHA-256 Authority signature:</span>
-                   <span className="font-mono text-[10px] text-cyan-400 font-bold bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/25">
-                     VERIFIED
-                   </span>
-                 </div>
-
-                 <div className="flex justify-between items-center py-1.5 border-b border-[#2a2a35]/40 border-dashed">
-                   <span className="text-white/50 text-[11px]">Consensus Quorum:</span>
-                   <span className="font-mono text-[10px] text-white/60">
-                     6/6 ALIVE_SYNC
-                   </span>
-                 </div>
-
-                 {/* Forensic Cryptographic Proof Drawer (Reveal on expansion) */}
-                  <AnimatePresence>
-                    {isProofExpanded && (
-                    <motion.div
-                      id="crypto-forensic-drawer"
-                      initial={{ opacity: 0, height: 0, marginTop: 0 }}
-                      animate={{ 
-                        opacity: 1, 
-                        height: "auto", 
-                        marginTop: 12,
-                        transition: {
-                          height: {
-                            type: "spring",
-                            stiffness: 240,
-                            damping: 24
-                          },
-                          opacity: { duration: 0.15 },
-                          marginTop: { duration: 0.1 }
-                        }
-                      }}
-                      exit={{ 
-                        opacity: 0, 
-                        height: 0, 
-                        marginTop: 0,
-                        transition: {
-                          height: { duration: 0.18, ease: "easeInOut" },
-                          opacity: { duration: 0.1 },
-                          marginTop: { duration: 0.1 }
-                        }
-                      }}
-                      className="p-3 bg-[#050507] border border-[#2a2a35] rounded-sm font-mono text-[9px] text-white/70 space-y-3 overflow-hidden"
-                    >
-                     <div className="space-y-1">
-                       <span className="text-[8px] text-white/35 uppercase font-bold tracking-widest block">Active Merkle Root Path Indices:</span>
-                       <pre className="text-[8px] text-cyan-400 bg-[#08080c] p-2 rounded overflow-x-auto border border-white/5 scrollbar-thin">
-{`   [Root: 8c3e21...9f220]
-       /           \\
- [H_01]: 2fe3a   [H_23]: f4a0e
-   /     \\         /     \\
- [Tx0]: [Tx1]   [Tx2]: [Tx3]`}
-                       </pre>
-                     </div>
-
-                     <div className="space-y-1.5 border-t border-[#2a2a35]/50 pt-2 text-[8.5px]">
-                       <div className="flex justify-between leading-relaxed">
-                         <span className="text-white/40">Authority seal:</span>
-                         <span className="text-cyan-300">ECDSA_SOVR_v2(SHA-256)</span>
-                       </div>
-                       <div className="flex justify-between">
-                         <span className="text-white/40">Validator group:</span>
-                         <span className="text-white/70">Consensus Authority Nodes #1-6</span>
-                       </div>
-                       <div className="flex justify-between">
-                         <span className="text-white/40">Proof epoch age:</span>
-                         <span className="text-[#ffffff]/60">1.4s (active block stream)</span>
-                       </div>
-                       <div className="flex justify-between">
-                         <span className="text-white/40">Ledger state seal:</span>
-                         <span className="text-emerald-400 font-bold">ALGEBRAICALLY_INVARIANT</span>
-                       </div>
-                     </div>
-
-                     <div className="grid grid-cols-3 gap-2 border-t border-[#2a2a35]/50 pt-2.5">
-                       <button
-                         onClick={() => {
-                           navigator.clipboard.writeText("8c3e21e7f3a2b1662defa0f5e712a42dd094f31cfa754ebfa05f426214227f22");
-                           alert("Canonical block authority signature hash copied to clipboard.");
-                         }}
-                         className="px-1.5 py-1 bg-[#101015] border border-[#2a2a35] hover:border-white/10 hover:bg-[#131422] rounded-sm text-center uppercase tracking-wide cursor-pointer transition-all active:scale-95 text-[8px]"
-                         title="Copy SHA-256 root hash to clipboard"
-                       >
-                         Copy Hash
-                       </button>
-
-                       <button
-                         onClick={() => {
-                           // Trigger validation routine
-                           alert("Verifying SHA-256 state invariants: Root match PASS. Debits/Credits match PASS. Signature match PASS.");
-                         }}
-                         className="px-1.5 py-1 bg-[#101015] border border-cyan-500/25 text-cyan-300 hover:bg-cyan-500/10 rounded-sm text-center uppercase tracking-wide cursor-pointer transition-all active:scale-95 text-[8px]"
-                         title="Execute local validation tree verification"
-                       >
-                         Verify Seal
-                       </button>
-
-                       <button
-                         onClick={() => {
-                           const proofTemplate = {
-                             merkleRoot: "8c3e21e7f3a2b1662defa0f5e712a42dd094f31cfa754ebfa05f426214227f22",
-                             sealerAuthority: "SOVR SHA-256 seal nodes",
-                             algebraicIntegrity: "PROVEN_PASS",
-                             timestamp: new Date().toISOString()
-                           };
-                           const blob = new Blob([JSON.stringify(proofTemplate, null, 2)], { type: 'application/json' });
-                           const url = URL.createObjectURL(blob);
-                           const link = document.createElement('a');
-                           link.href = url;
-                           link.download = `sovr_cryptographic_proof_${Date.now()}.json`;
-                           document.body.appendChild(link);
-                           link.click();
-                           document.body.removeChild(link);
-                         }}
-                         className="px-1.5 py-1 bg-[#101015] border border-[#2a2a35] hover:border-white/10 hover:bg-[#131422] rounded-sm text-center uppercase tracking-wide cursor-pointer transition-all active:scale-95 text-[8px]"
-                         title="Download digital proof signature"
-                       >
-                         Export Proof
-                       </button>
-                     </div>
-                   </motion.div>
-                 )}
-               </AnimatePresence>
-
-                 <div className="bg-[#050507] p-3 rounded mt-1.5 text-[10.5px] text-white/55 border border-[#2a2a35] flex items-start gap-2.5 leading-relaxed">
-                   <Info className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
-                   <p>
-                     This in-memory control client models the complete live **SOVR core gateway** protocol. All debit/credit actions verify algebraic invariance.
-                   </p>
-                 </div>
-
-                 <button
-                   id="export-logs-button"
-                   onClick={handleExportLogs}
-                   className="w-full mt-2.5 px-3 py-2 text-[10px] font-bold uppercase tracking-widest bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 rounded flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] cursor-pointer"
-                 >
-                   <Download className="w-3.5 h-3.5" />
-                   Export Ledger Logs
-                 </button>
-               </div>
-             </div>
-
+        {activeMainTab === 'Settlement' && (
+          <div className="space-y-6 animate-fadeIn">
+            <OrchestrationEngine />
           </div>
+        )}
 
-        </div>
+        {activeMainTab === 'Trust Vault' && (
+          <div className="space-y-6 animate-fadeIn">
+            <TrustVault 
+              transactions={transactions} 
+              setSelectedTxIdForDrilldown={setSelectedTxIdForDrilldown} 
+              accounts={accounts}
+            />
+          </div>
+        )}
 
-        {/* LEDGER TRANSACTION STREAM LOG CONTAINER */}
-        <div className="w-full">
-          <TransactionsHistory transactions={transactions} />
-        </div>
+        {activeMainTab === 'Compliance' && (
+          <div className="space-y-6 animate-fadeIn">
+            <ComplianceHub 
+              accounts={accounts} 
+              transactions={transactions} 
+              formatCurrency={formatCurrency} 
+            />
+            <AuditVault onSelectTransaction={setSelectedTxIdForDrilldown} />
+          </div>
+        )}
+
+        {activeMainTab === 'Gateway Fabric' && (
+          <div className="space-y-6 animate-fadeIn">
+            <GatewayFabric apps={apps} setApps={setApps} />
+          </div>
+        )}
+
+        {activeMainTab === 'Administration' && (
+          <div className="space-y-6 animate-fadeIn">
+            <AdministrationView />
+          </div>
+        )}
 
       </main>
 
@@ -949,17 +1026,6 @@ export default function App() {
           transactions={transactions}
           formatCurrency={formatCurrency}
           accounts={accounts}
-          pulseCount={pulseCount}
-          pendingVerifications={pendingVerifications}
-          timelineEvents={timelineEvents}
-          ingestionItems={ingestionItems}
-          agents={agents}
-          anomalies={anomalies}
-          geoNodes={geoNodes}
-          routes={routes}
-          currentBlockHeight={chain[0]?.height || 0}
-          onTriggerAnomaly={handleTriggerAnomaly}
-          onDismissAnomaly={handleDismissAnomaly}
         />
       )}
       {false && isCommandViewActive && (

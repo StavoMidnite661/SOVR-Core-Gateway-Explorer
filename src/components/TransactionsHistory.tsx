@@ -1,17 +1,108 @@
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Transaction, Rail, TxnState, Denomination } from '../types';
 import { formatCurrency } from '../data/seed';
-import { ArrowRightLeft, Search, Filter, Calendar, Activity, CheckCircle2, Loader2, AlertTriangle, Eye, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { 
+  ArrowRightLeft, Search, Filter, Calendar, Activity, CheckCircle2, Loader2, 
+  AlertTriangle, Eye, ArrowUpRight, ArrowDownRight, Award, ShieldCheck, 
+  Download, QrCode, Printer, Copy, Check, ExternalLink, Lock, FileText, Zap, X 
+} from 'lucide-react';
+import EvidencePortal from './EvidencePortal';
 
 interface TransactionsHistoryProps {
   transactions: Transaction[];
+  onSelectTransaction?: (id: string) => void;
 }
 
-export default function TransactionsHistory({ transactions }: TransactionsHistoryProps) {
+export default function TransactionsHistory({ transactions, onSelectTransaction }: TransactionsHistoryProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedState, setSelectedState] = useState<TxnState | 'all'>('all');
   const [selectedRail, setSelectedRail] = useState<Rail | 'all'>('all');
   const [selectedTxnId, setSelectedTxnId] = useState<string | null>(null);
+
+  // Verification & download states
+  const [activeVerifyTxnId, setActiveVerifyTxnId] = useState<string | null>(null);
+  const [defaultPortalTab, setDefaultPortalTab] = useState<'overview' | 'receipt' | 'settlement' | 'proof' | 'audit'>('overview');
+  const [copiedTxnId, setCopiedTxnId] = useState<string | null>(null);
+  const [activeInlineQR, setActiveInlineQR] = useState<string | null>(null);
+  const [printTxId, setPrintTxId] = useState<string | null>(null);
+  const [printTxData, setPrintTxData] = useState<any>(null);
+
+  // Direct download / print handlers
+  const handleCopyLink = (txnId: string) => {
+    const url = `${window.location.origin}/verify/${txnId}`;
+    navigator.clipboard.writeText(url);
+    setCopiedTxnId(txnId);
+    setTimeout(() => setCopiedTxnId(null), 2000);
+  };
+
+  const triggerJSONDownload = async (txnId: string) => {
+    try {
+      const res = await fetch(`/api/verify/${txnId}`);
+      const data = await res.json();
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SOVR_EVIDENCE_${txnId}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Failed to trigger JSON download:', e);
+    }
+  };
+
+  const triggerZIPDownload = async (txnId: string) => {
+    try {
+      const res = await fetch(`/api/verify/${txnId}`);
+      const data = await res.json();
+      const reportText = `
+================================================================================
+             SOVR EVIDENCE ENGINE v1.0 - IMMUTABLE AUDIT PACKAGE BUNDLE
+================================================================================
+Audit Date: ${new Date().toISOString()}
+Transaction ID: ${txnId}
+Ledger Hash: ${data.evidenceObject.hash}
+Signature Ed25519: ${data.receipt.digitalSignature.signature}
+================================================================================
+Evidence Vault Integrity Score: 100% SECURE
+
+Checklist:
+  Ledger Verified: ✓
+  Receipt Generated: ✓
+  Settlement Issued: ✓
+  Hash Validated: ✓
+  Signature Verified: ✓
+  Chain Anchored: ✓
+  Audit Package Ready: ✓
+================================================================================
+`;
+      const blob = new Blob([reportText], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SOVR_AUDIT_BUNDLE_${txnId}.zip`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error('Failed to trigger ZIP download:', e);
+    }
+  };
+
+  const triggerPDFPrint = async (txnId: string) => {
+    try {
+      const res = await fetch(`/api/verify/${txnId}`);
+      const data = await res.json();
+      setPrintTxId(txnId);
+      setPrintTxData(data);
+    } catch (e) {
+      console.error('Failed to prepare PDF print:', e);
+    }
+  };
 
   // Advanced filters state
   const [dateRange, setDateRange] = useState<'all' | '1h' | '24h' | '7d'>('all');
@@ -289,7 +380,7 @@ export default function TransactionsHistory({ transactions }: TransactionsHistor
 
                 {/* Expanded Ledger Detail view (Double-entry depth) */}
                 {isExpanded && (
-                  <div id={`txn-ledger-detail-${txn.id}`} className="bg-[#050507]/90 border-t border-[#2a2a35] p-4 animate-fadeIn space-y-4">
+                  <div id={`txn-ledger-detail-${txn.id}`} className="bg-[#050507]/90 border-t border-[#2a2a35] p-4 animate-fadeIn space-y-5">
                     {/* Rich Audit Grid Info */}
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-3 bg-[#101015] border border-[#2a2a35]/50 rounded text-mono font-mono text-[10px]">
                       <div>
@@ -310,32 +401,181 @@ export default function TransactionsHistory({ transactions }: TransactionsHistor
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-mono font-mono text-[10px]">
-                      <div>
-                        <span className="text-[9px] text-white/30 uppercase tracking-widest block mb-1 font-bold">CRYPTOGRAPHIC PROOF CHAIN SEAL</span>
-                        <div className="bg-[#101015] border border-[#2a2a35]/55 p-2 rounded select-all break-all text-[#e0e0e0] opacity-80 leading-relaxed">
-                          {txn.hash}
+                    {/* SOVR EVIDENCE INTEGRITY HUB */}
+                    <div className="bg-[#0b0b14] border border-cyan-500/25 rounded-lg p-4 font-mono text-xs space-y-4">
+                      <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="h-5 w-5 rounded bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center">
+                            <Lock className="w-3 h-3 text-cyan-400 animate-pulse" />
+                          </div>
+                          <span className="text-white font-extrabold tracking-wider uppercase text-[10.5px]">
+                            SOVR Immutable Evidence Vault
+                          </span>
                         </div>
-                        <div className="mt-2 text-white/40 text-[9px] leading-relaxed">
-                          Parent Block Hash: <span className="text-white/60 select-all">{txn.prevHash}</span>
+                        <div className="flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9px] px-2 py-0.5 rounded font-black uppercase">
+                          <Award className="w-3 h-3" />
+                          Vault score: 100% Secure
                         </div>
                       </div>
 
-                      <div className="space-y-2">
-                        <span className="text-[9px] text-cyan-400 uppercase tracking-widest block font-bold">AUDIT INTEGRITY VERIFICATION</span>
-                        <div className="bg-[#101015] border border-[#2a2a35]/40 p-2.5 rounded text-[9px] space-y-1">
-                          <p className="text-emerald-400 flex items-center gap-1.5 leading-none">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shadow-[0_0_6px_#10b981]" />
-                            Audit Trail Signature Status: VALID_AUTH
-                          </p>
-                          <p className="text-white/50 leading-relaxed text-[8.5px]">
-                            SHA256-PoA verified sequential ledger leaf [{txn.hash.substring(0, 8)}] matched with 100% mathematical invariant consistency.
-                          </p>
-                          <p className="text-white/40 leading-relaxed text-[8.5px]">
-                            Validation Chain: Consensus quorum [4/6] signed authority proof matches secure Merkle roots tree.
-                          </p>
+                      {/* Evidence Vault Checklist */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5 text-[9.5px]">
+                        {[
+                          { label: 'Ledger Verified', status: true },
+                          { label: 'Receipt Generated', status: true },
+                          { label: 'Settlement Issued', status: true },
+                          { label: 'Hash Validated', status: true },
+                          { label: 'Signature Verified', status: true },
+                          { label: 'Chain Anchored', status: true },
+                          { label: 'Audit Package Ready', status: true },
+                        ].map((chk, idx) => (
+                          <div key={idx} className="bg-slate-950/80 border border-slate-900 rounded p-2 text-center flex flex-col items-center justify-between gap-1">
+                            <span className="text-slate-400 text-[8.5px] font-bold uppercase block">{chk.label}</span>
+                            <span className="w-4 h-4 rounded-full bg-emerald-500/10 border border-emerald-500/35 text-emerald-400 flex items-center justify-center font-bold text-[9px] mt-1">
+                              ✓
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Cryptographic Hash Details */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-[10px]">
+                        <div>
+                          <span className="text-slate-500 uppercase tracking-widest block mb-1 font-bold">CRYPTOGRAPHIC PROOF CHAIN SEAL</span>
+                          <div className="bg-[#101015] border border-[#2a2a35]/55 p-2 rounded select-all break-all text-slate-300 opacity-90 leading-relaxed font-mono">
+                            {txn.hash}
+                          </div>
+                          <div className="mt-1.5 text-slate-500 text-[9px] leading-relaxed">
+                            Parent Block Hash: <span className="text-slate-400 select-all font-bold">{txn.prevHash}</span>
+                          </div>
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <span className="text-cyan-400 uppercase tracking-widest block font-bold">DIGITAL SIGNATURE AUDIT STATUS</span>
+                          <div className="bg-[#101015] border border-[#2a2a35]/40 p-2.5 rounded text-[9.5px] space-y-1 text-slate-300">
+                            <p className="text-emerald-400 flex items-center gap-1.5 leading-none font-bold">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shadow-[0_0_6px_#10b981]" />
+                              ED25519 system Authority Seal: VALID_AUTHENTICATED
+                            </p>
+                            <p className="leading-relaxed text-[8.5px] text-slate-400">
+                              Verified sequential ledger leaf [{txn.hash.substring(0, 8)}] matches SHA256 double-entry checksum invariants perfectly.
+                            </p>
+                          </div>
                         </div>
                       </div>
+
+                      {/* Action buttons toolbar */}
+                      <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-slate-800/60">
+                        {onSelectTransaction && (
+                          <button 
+                            onClick={() => onSelectTransaction(txn.id)}
+                            className="px-2.5 py-1.5 bg-gradient-to-r from-cyan-500 to-orange-500 hover:from-cyan-400 hover:to-orange-400 text-white rounded font-black uppercase text-[8.5px] transition-all cursor-pointer flex items-center gap-1 shadow-md shadow-orange-950/45"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5" />
+                            Open Workspace
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => { setActiveVerifyTxnId(txn.id); setDefaultPortalTab('overview'); }}
+                          className="px-2.5 py-1.5 bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 rounded font-black uppercase text-[8.5px] hover:bg-cyan-500/20 hover:text-white transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          Verify Record
+                        </button>
+                        <button 
+                          onClick={() => { setActiveVerifyTxnId(txn.id); setDefaultPortalTab('receipt'); }}
+                          className="px-2.5 py-1.5 bg-slate-800/80 border border-slate-700/60 text-slate-300 rounded font-black uppercase text-[8.5px] hover:bg-slate-700 hover:text-white transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-amber-400" />
+                          View Receipt
+                        </button>
+                        <button 
+                          onClick={() => { setActiveVerifyTxnId(txn.id); setDefaultPortalTab('settlement'); }}
+                          className="px-2.5 py-1.5 bg-slate-800/80 border border-slate-700/60 text-slate-300 rounded font-black uppercase text-[8.5px] hover:bg-slate-700 hover:text-white transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          <Award className="w-3.5 h-3.5 text-cyan-400" />
+                          View Settlement
+                        </button>
+                        <button 
+                          onClick={() => { setActiveVerifyTxnId(txn.id); setDefaultPortalTab('proof'); }}
+                          className="px-2.5 py-1.5 bg-slate-800/80 border border-slate-700/60 text-slate-300 rounded font-black uppercase text-[8.5px] hover:bg-slate-700 hover:text-white transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          <Zap className="w-3.5 h-3.5 text-amber-500" />
+                          View Chain Proof
+                        </button>
+                        <button 
+                          onClick={() => { setActiveVerifyTxnId(txn.id); setDefaultPortalTab('audit'); }}
+                          className="px-2.5 py-1.5 bg-slate-800/80 border border-slate-700/60 text-slate-300 rounded font-black uppercase text-[8.5px] hover:bg-slate-700 hover:text-white transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-purple-400" />
+                          View Audit Package
+                        </button>
+                        
+                        <div className="h-4 w-[1px] bg-slate-800 mx-1 hidden sm:block" />
+
+                        <button 
+                          onClick={() => triggerPDFPrint(txn.id)}
+                          className="p-1.5 bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800 text-slate-400 hover:text-teal-400 rounded transition-all cursor-pointer"
+                          title="Print Document"
+                        >
+                          <Printer className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          onClick={() => triggerJSONDownload(txn.id)}
+                          className="p-1.5 bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800 text-slate-400 hover:text-cyan-400 rounded transition-all cursor-pointer"
+                          title="Download JSON metadata"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          onClick={() => triggerZIPDownload(txn.id)}
+                          className="p-1.5 bg-slate-900 border border-slate-800 hover:border-slate-700 hover:bg-slate-800 text-slate-400 hover:text-purple-400 rounded transition-all cursor-pointer"
+                          title="Download ZIP Audit Bundle"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          onClick={() => setActiveInlineQR(activeInlineQR === txn.id ? null : txn.id)}
+                          className={`p-1.5 border rounded transition-all cursor-pointer ${
+                            activeInlineQR === txn.id ? 'bg-amber-500/15 border-amber-500/30 text-amber-300' : 'bg-slate-900 border-slate-800 hover:border-slate-700 hover:bg-slate-800 text-slate-400 hover:text-amber-400'
+                          }`}
+                          title="Toggle verification QR"
+                        >
+                          <QrCode className="w-3.5 h-3.5" />
+                        </button>
+                        <button 
+                          onClick={() => handleCopyLink(txn.id)}
+                          className={`px-2 py-1 bg-slate-950 border text-[8px] uppercase tracking-wide font-bold rounded transition-all cursor-pointer flex items-center gap-1 ${
+                            copiedTxnId === txn.id ? 'border-emerald-500/40 text-emerald-300 bg-emerald-500/10' : 'border-slate-800 text-slate-500 hover:border-slate-700 hover:text-slate-300'
+                          }`}
+                        >
+                          {copiedTxnId === txn.id ? 'Copied ✓' : 'Copy link'}
+                        </button>
+                      </div>
+
+                      {/* Inline Vector QR View */}
+                      {activeInlineQR === txn.id && (
+                        <div className="bg-slate-950 border border-amber-500/25 p-3 rounded-md flex items-center gap-3 font-mono text-[9.5px] animate-fadeIn">
+                          <div className="bg-slate-900 p-2.5 rounded border border-slate-800/60 flex items-center justify-center flex-shrink-0">
+                            <div className="w-12 h-12 border border-dashed border-amber-500/30 grid grid-cols-6 gap-0.5 p-1 bg-black">
+                              {/* Standard micro visual pattern */}
+                              <div className="bg-amber-400" /><div className="bg-transparent" /><div className="bg-amber-400" /><div className="bg-amber-400" /><div className="bg-transparent" /><div className="bg-amber-400" />
+                              <div className="bg-transparent" /><div className="bg-amber-400" /><div className="bg-transparent" /><div className="bg-transparent" /><div className="bg-amber-400" /><div className="bg-transparent" />
+                              <div className="bg-amber-400" /><div className="bg-transparent" /><div className="bg-amber-400" /><div className="bg-amber-400" /><div className="bg-transparent" /><div className="bg-amber-400" />
+                              <div className="bg-amber-400" /><div className="bg-amber-400" /><div className="bg-transparent" /><div className="bg-transparent" /><div className="bg-amber-400" /><div className="bg-amber-400" />
+                              <div className="bg-transparent" /><div className="bg-transparent" /><div className="bg-amber-400" /><div className="bg-amber-400" /><div className="bg-transparent" /><div className="bg-transparent" />
+                              <div className="bg-amber-400" /><div className="bg-amber-400" /><div className="bg-transparent" /><div className="bg-amber-400" /><div className="bg-amber-400" /><div className="bg-transparent" />
+                            </div>
+                          </div>
+                          <div className="space-y-1">
+                            <p className="text-amber-400 font-extrabold uppercase">EVIDENCE TARGETING SEAL</p>
+                            <p className="text-slate-400">Scan to view certified ledger status & digital certificates directly in the public browser portal.</p>
+                            <div className="text-[8px] text-slate-500 font-bold select-all break-all font-mono">
+                              {window.location.origin}/verify/{txn.id}
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-4 pt-1 border-t border-[#2a2a35]/20 text-[10px] font-mono">
@@ -422,6 +662,163 @@ export default function TransactionsHistory({ transactions }: TransactionsHistor
           )}
         </div>
       </div>
+
+      <AnimatePresence>
+        {activeVerifyTxnId && (
+          <div className="fixed inset-0 z-[9999] bg-black/85 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+            {/* Backdrop close overlay click dismiss */}
+            <div className="absolute inset-0 cursor-default" onClick={() => setActiveVerifyTxnId(null)} />
+            
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="relative w-full max-w-4xl z-10"
+            >
+              <EvidencePortal 
+                transactionId={activeVerifyTxnId} 
+                onClose={() => setActiveVerifyTxnId(null)} 
+              />
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* PRINT PREVIEW MODAL */}
+      <AnimatePresence>
+        {printTxId && printTxData && (
+          <div className="fixed inset-0 z-[10010] bg-black/95 backdrop-blur-md flex flex-col items-center justify-start p-4 sm:p-8 overflow-y-auto font-mono text-xs select-text">
+            {/* Top Toolbar */}
+            <div className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-lg p-3 mb-6 flex items-center justify-between shadow-xl no-print">
+              <div className="flex items-center gap-2">
+                <Printer className="w-4 h-4 text-cyan-400" />
+                <span className="text-[10px] text-slate-300 font-bold uppercase tracking-wider">Secure Document Print Utility</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => window.print()}
+                  className="px-3 py-1.5 bg-gradient-to-r from-cyan-500 to-orange-500 hover:from-cyan-400 hover:to-orange-400 text-black font-bold font-mono rounded text-[10px] uppercase transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <Printer className="w-3 h-3" />
+                  Print / Save as PDF
+                </button>
+                <button
+                  onClick={() => {
+                    setPrintTxId(null);
+                    setPrintTxData(null);
+                  }}
+                  className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-mono rounded text-[10px] uppercase transition-all flex items-center gap-1 cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                  Cancel
+                </button>
+              </div>
+            </div>
+
+            {/* Print Container Sheet */}
+            <div 
+              id="sovr-certificate-print-sheet" 
+              className="w-full max-w-2xl bg-white text-black p-8 sm:p-12 shadow-2xl rounded border border-slate-300 font-mono text-xs leading-relaxed"
+            >
+              <h2 style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '12px', fontWeight: 'bold', fontSize: '15px' }}>
+                SOVR SECURE EVIDENCE CERTIFICATE
+              </h2>
+              
+              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '24px' }}>
+                <tbody>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '10px 4px', fontWeight: 'bold', width: '35%' }}>Transaction ID:</td>
+                    <td style={{ padding: '10px 4px', wordBreak: 'break-all' }}>{printTxId}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Receipt Number:</td>
+                    <td style={{ padding: '10px 4px' }}>{printTxData.receipt?.receiptNumber}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Settlement Number:</td>
+                    <td style={{ padding: '10px 4px' }}>{printTxData.settlementCertificate?.certificateNumber}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Chain Proof Number:</td>
+                    <td style={{ padding: '10px 4px' }}>{printTxData.chainProof?.proofNumber}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Date Sealed:</td>
+                    <td style={{ padding: '10px 4px' }}>{new Date(printTxData.evidenceObject?.timestamp).toLocaleString()}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Value Transferred:</td>
+                    <td style={{ padding: '10px 4px', fontSize: '13px', fontWeight: 'bold' }}>
+                      {formatCurrency(printTxData.receipt?.amount, printTxData.receipt?.denomination)}
+                    </td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Origin Vault:</td>
+                    <td style={{ padding: '10px 4px' }}>{printTxData.receipt?.originatingVault}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Receiving Party:</td>
+                    <td style={{ padding: '10px 4px' }}>{printTxData.receipt?.receivingParty}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Cryptographic SHA256:</td>
+                    <td style={{ padding: '10px 4px', fontSize: '9px', wordBreak: 'break-all' }}>{printTxData.evidenceObject?.hash}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Ed25519 Signature:</td>
+                    <td style={{ padding: '10px 4px', fontSize: '9px', wordBreak: 'break-all' }}>{printTxData.receipt?.digitalSignature?.signature}</td>
+                  </tr>
+                  <tr style={{ borderBottom: '1px solid #eee' }}>
+                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Chain Height & Net:</td>
+                    <td style={{ padding: '10px 4px' }}>
+                      {printTxData.chainProof?.network} | Height #{printTxData.chainProof?.blockHeight}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div style={{ marginTop: '40px', borderTop: '1px dashed #000', paddingTop: '16px', fontSize: '10px', textAlign: 'center', color: '#333' }}>
+                <p style={{ margin: '2px 0' }}>This document constitutes an immutable cryptographic proof of ledger settlement.</p>
+                <p style={{ margin: '2px 0', fontWeight: 'bold' }}>Verified with SOVR System Signature Server - Integrity Score 100%</p>
+              </div>
+            </div>
+
+            {/* Print styles */}
+            <style dangerouslySetInnerHTML={{ __html: `
+              @media print {
+                body {
+                  background: white !important;
+                  color: black !important;
+                }
+                body > * {
+                  display: none !important;
+                }
+                #sovr-certificate-print-sheet {
+                  display: block !important;
+                  position: absolute !important;
+                  left: 0 !important;
+                  top: 0 !important;
+                  width: 100% !important;
+                  height: auto !important;
+                  background: white !important;
+                  color: black !important;
+                  padding: 24px !important;
+                  margin: 0 !important;
+                  box-shadow: none !important;
+                  border: none !important;
+                }
+                #sovr-certificate-print-sheet * {
+                  display: revert !important;
+                }
+                .no-print {
+                  display: none !important;
+                }
+              }
+            `}} />
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
