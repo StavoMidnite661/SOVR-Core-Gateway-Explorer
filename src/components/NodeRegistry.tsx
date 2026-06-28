@@ -24,8 +24,106 @@ interface Node {
   verified: boolean;
 }
 
+const INITIAL_NODES: Node[] = [
+  {
+    id: 'NY_LC',
+    name: 'NY Ledger Core',
+    role: 'Ledger Settlement Host',
+    region: 'North America',
+    status: 'ONLINE',
+    heartbeat: '0.9s ago',
+    applications: ['UnifiedPay Hub', 'SOVR Bridge'],
+    connections: 12,
+    assetsRouted: '12.5M SVT',
+    riskScore: 'Low (0.01%)',
+    cpu: 24,
+    ram: 42,
+    queueDepth: 1,
+    throughput: 420,
+    latency: 12,
+    activeSessions: 182,
+    verified: true
+  },
+  {
+    id: 'LDN_R',
+    name: 'London Routing',
+    role: 'Consensus Coordinator',
+    region: 'Western Europe',
+    status: 'ONLINE',
+    heartbeat: '0.4s ago',
+    applications: ['UnifiedPay Hub', 'Basalt Console'],
+    connections: 8,
+    assetsRouted: '8.4M SVT',
+    riskScore: 'Low (0.02%)',
+    cpu: 18,
+    ram: 37,
+    queueDepth: 0,
+    throughput: 310,
+    latency: 15,
+    activeSessions: 94,
+    verified: true
+  },
+  {
+    id: 'ZRH_T',
+    name: 'Zurich Treasury',
+    role: 'SOVR Vault Agent',
+    region: 'Central Europe',
+    status: 'ONLINE',
+    heartbeat: '1.1s ago',
+    applications: ['Basalt Console'],
+    connections: 6,
+    assetsRouted: '19.1M SVT',
+    riskScore: 'Low (0.00%)',
+    cpu: 31,
+    ram: 50,
+    queueDepth: 2,
+    throughput: 550,
+    latency: 16,
+    activeSessions: 112,
+    verified: true
+  },
+  {
+    id: 'SGP_G',
+    name: 'Singapore Gate',
+    role: 'Asynchronous Gateway',
+    region: 'Southeast Asia',
+    status: 'ONLINE',
+    heartbeat: '1.7s ago',
+    applications: ['UnifiedPay Hub', 'SOVR Bridge', 'Basalt Console'],
+    connections: 15,
+    assetsRouted: '31.2M SVT',
+    riskScore: 'Low (0.04%)',
+    cpu: 48,
+    ram: 58,
+    queueDepth: 4,
+    throughput: 890,
+    latency: 32,
+    activeSessions: 245,
+    verified: true
+  },
+  {
+    id: 'TYO_C',
+    name: 'Tokyo Consensus',
+    role: 'Witness Notary Node',
+    region: 'East Asia',
+    status: 'ONLINE',
+    heartbeat: '0.6s ago',
+    applications: ['SOVR Bridge'],
+    connections: 5,
+    assetsRouted: '5.1M SVT',
+    riskScore: 'Low (0.01%)',
+    cpu: 14,
+    ram: 29,
+    queueDepth: 0,
+    throughput: 180,
+    latency: 41,
+    activeSessions: 62,
+    verified: true
+  }
+];
+
 export default function NodeRegistry() {
-  const [nodes, setNodes] = useState<Node[]>([]);
+  const [nodes, setNodes] = useState<Node[]>(INITIAL_NODES);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
