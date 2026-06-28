@@ -58,8 +58,11 @@ export default function TransactionWorkspace({
   const handleDownload = async (format: 'zip' | 'json') => {
     setDownloadingFormat(format);
     try {
-      // Trigger browser download by opening the download URL
-      window.open(`/api/evidence/download/${transactionId}?format=${format}`, '_blank');
+      const a = document.createElement('a');
+      a.href = `/api/evidence/download/${transactionId}?format=${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
     } catch (err) {
       console.error(err);
     } finally {

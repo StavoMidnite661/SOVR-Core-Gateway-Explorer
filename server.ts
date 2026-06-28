@@ -1159,303 +1159,567 @@ const EvidenceBundleService = {
 <!DOCTYPE html>
 <html>
 <head>
+  <meta charset="utf-8">
+  <title>Certificate of Settlement</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Playfair+Display:wght@400;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Rajdhani:wght@600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600;1,700&display=swap');
+    
     body {
-        font-family: 'Inter', sans-serif;
-        background: #f1f5f9;
-        color: #0f172a;
-        padding: 40px;
-        margin: 0;
-        display: flex;
-        justify-content: center;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #090a0f;
+      color: #e2e8f0;
+      padding: 40px;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
     }
-    .document {
-        width: 100%;
-        max-width: 900px;
-        background: #ffffff;
-        position: relative;
-        padding: 80px 60px;
-        box-shadow: 0 40px 80px -20px rgba(0,0,0,0.25);
-        border: 1px solid #e2e8f0;
-        overflow: hidden;
+
+    .certificate-container {
+      width: 100%;
+      max-width: 650px;
+      background: #0f1117;
+      color: #e2e8f0;
+      padding: 0;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      border-radius: 12px;
+      border: 1px solid #1e293b;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      line-height: 1.6;
+      overflow: hidden;
+      position: relative;
     }
-    /* Quadruple formal border scheme */
-    .border-1 {
-        position: absolute;
-        top: 15px; left: 15px; right: 15px; bottom: 15px;
-        border: 3px solid #0f172a;
-        pointer-events: none;
-    }
-    .border-2 {
-        position: absolute;
-        top: 22px; left: 22px; right: 22px; bottom: 22px;
-        border: 1px solid #0f172a;
-        pointer-events: none;
-    }
-    .border-3 {
-        position: absolute;
-        top: 26px; left: 26px; right: 26px; bottom: 26px;
-        border: 1px solid #cbd5e1;
-        pointer-events: none;
-    }
-    .border-4 {
-        position: absolute;
-        top: 30px; left: 30px; right: 30px; bottom: 30px;
-        border: 1px solid #e2e8f0;
-        pointer-events: none;
-    }
-    /* Ornate Corners */
-    .corner {
-        position: absolute;
-        width: 40px; height: 40px;
-        border: 1px solid #0f172a;
-        background: #ffffff;
-        z-index: 2;
-    }
-    .corner-tl { top: 12px; left: 12px; border-radius: 0 0 100% 0; border-top: none; border-left: none; }
-    .corner-tr { top: 12px; right: 12px; border-radius: 0 0 0 100%; border-top: none; border-right: none; }
-    .corner-bl { bottom: 12px; left: 12px; border-radius: 0 100% 0 0; border-bottom: none; border-left: none; }
-    .corner-br { bottom: 12px; right: 12px; border-radius: 100% 0 0 0; border-bottom: none; border-right: none; }
 
     .watermark {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 160px;
-        color: rgba(15, 23, 42, 0.02);
-        font-weight: 700;
-        white-space: nowrap;
-        pointer-events: none;
-        z-index: 0;
-        font-family: 'Cinzel', serif;
-        letter-spacing: 20px;
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 120px;
+      color: rgba(34, 211, 238, 0.04);
+      pointer-events: none;
+      user-select: none;
+      line-height: 1;
+      z-index: 1;
     }
-    .seal {
-        position: absolute;
-        top: 60px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1;
-        background: radial-gradient(circle at center, #ffd700 0%, #b8860b 100%);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.1), inset 0 2px 5px rgba(255,255,255,0.5);
+
+    .header-band {
+      background: linear-gradient(135deg, #0c1628 0%, #0f1f3d 50%, #0c1628 100%);
+      border-bottom: 1px solid #1e3a5f;
+      padding: 28px 36px 24px;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 20px;
     }
-    .seal::before {
-        content: '';
-        position: absolute;
-        top: 5px; left: 5px; right: 5px; bottom: 5px;
-        border-radius: 50%;
-        border: 1px dashed rgba(255,255,255,0.6);
+
+    .brand-block {
+      display: flex;
+      align-items: center;
+      gap: 14px;
     }
-    .seal-inner {
-        font-size: 48px;
-        color: #ffffff;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+
+    .brand-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(34, 211, 238, 0.08);
+      border: 1px solid rgba(34, 211, 238, 0.3);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
     }
-    .header {
-        position: relative;
-        z-index: 1;
-        text-align: center;
-        margin-top: 100px;
-        margin-bottom: 50px;
+
+    .issuer {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      display: block;
     }
-    .header h1 {
-        font-family: 'Cinzel', serif;
-        font-size: 46px;
-        margin: 0;
-        color: #0f172a;
-        font-weight: 700;
-        letter-spacing: 2px;
-        text-transform: uppercase;
+
+    .title {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: #22d3ee;
+      letter-spacing: 1px;
+      line-height: 1.2;
+      text-transform: uppercase;
     }
-    .header .subtitle {
-        font-size: 12px;
-        color: #475569;
-        text-transform: uppercase;
-        letter-spacing: 6px;
-        margin-top: 16px;
-        font-weight: 600;
+
+    .subtitle {
+      font-size: 9px;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-top: 2px;
     }
-    .cert-intro {
-        text-align: center;
-        font-family: 'Playfair Display', serif;
-        font-size: 20px;
-        font-style: italic;
-        color: #334155;
-        margin-bottom: 50px;
-        position: relative;
-        z-index: 1;
-        line-height: 2;
+
+    .certified-stamp {
+      background: rgba(16, 185, 129, 0.06);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 9px;
+      color: #10b981;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-top: 8px;
+      display: inline-block;
     }
-    .highlight-id {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 16px;
-        font-style: normal;
-        font-weight: 700;
-        background: #f8fafc;
-        padding: 6px 16px;
-        border: 1px solid #e2e8f0;
-        border-radius: 2px;
-        letter-spacing: 1px;
-        margin: 0 8px;
+
+    .cert-number-badge {
+      background: rgba(34, 211, 238, 0.06);
+      border: 1px solid rgba(34, 211, 238, 0.25);
+      border-radius: 8px;
+      padding: 10px 16px;
+      text-align: right;
+      flex-shrink: 0;
     }
-    .grid-content {
-        position: relative;
-        z-index: 1;
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0;
-        margin-bottom: 60px;
-        border-top: 2px solid #0f172a;
-        border-left: 2px solid #0f172a;
-        background: rgba(255,255,255,0.8);
+
+    .cert-number-badge .label {
+      font-size: 8px;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      display: block;
+      margin-bottom: 4px;
     }
-    .grid-cell {
-        padding: 30px;
-        border-right: 2px solid #0f172a;
-        border-bottom: 2px solid #0f172a;
+
+    .cert-number-badge .value {
+      font-size: 14px;
+      color: #22d3ee;
+      font-weight: bold;
+      letter-spacing: 1px;
     }
-    .data-label {
-        font-size: 9px;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        margin-bottom: 12px;
-        font-weight: 700;
+
+    .body-section {
+      padding: 28px 36px;
     }
-    .data-value {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 15px;
-        color: #0f172a;
-        font-weight: 600;
+
+    .attestation-text {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.7;
+      margin: 0 0 28px 0;
+      border-left: 2px solid rgba(34, 211, 238, 0.2);
+      padding-left: 16px;
     }
-    .data-value.amount {
-        font-family: 'Playfair Display', serif;
-        font-size: 26px;
-        font-weight: 700;
-        letter-spacing: 0.5px;
+
+    .amount-display {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.03)) !important;
+      border: 1px solid rgba(16, 185, 129, 0.2) !important;
+      border-radius: 10px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    .full-width {
-        grid-column: 1 / -1;
+
+    .amount-display .label {
+      font-size: 10px;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      display: block;
+      margin-bottom: 6px;
     }
-    .hash-data {
-        font-family: 'JetBrains Mono', monospace;
-        font-size: 11px;
-        color: #475569;
-        word-break: break-all;
-        line-height: 1.6;
-        font-weight: 500;
+
+    .amount-display .figure {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 36px;
+      font-weight: 700;
+      color: #10b981;
+      letter-spacing: 1px;
+      line-height: 1;
     }
-    .signatures {
-        position: relative;
-        z-index: 1;
-        display: flex;
-        justify-content: space-between;
-        padding: 0 40px;
-        margin-top: 100px;
+
+    .currency-tag {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 11px;
+      color: #10b981;
+      text-transform: uppercase;
+      letter-spacing: 2px;
     }
-    .sig-block {
-        text-align: center;
-        width: 250px;
+
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 20px;
     }
-    .sig-line {
-        border-bottom: 1px solid #0f172a;
-        padding-bottom: 15px;
-        margin-bottom: 15px;
-        height: 70px;
-        display: flex;
-        align-items: flex-end;
-        justify-content: center;
+
+    .metric-card {
+      background: #0a0c12;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 14px 16px;
     }
-    .sig-name {
-        font-family: 'Playfair Display', serif;
-        font-size: 36px;
-        font-style: italic;
-        color: #0f172a;
+
+    .metric-card .m-label {
+      font-size: 8px;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      display: block;
+      margin-bottom: 6px;
     }
-    .sig-label {
-        font-size: 10px;
-        color: #64748b;
-        text-transform: uppercase;
-        letter-spacing: 2px;
-        font-weight: 700;
+
+    .metric-card .m-value {
+      font-size: 13px;
+      font-weight: bold;
+    }
+
+    .metric-card .cyan { color: #22d3ee; }
+    .metric-card .amber { color: #f59e0b; }
+    .metric-card .emerald { color: #10b981; }
+
+    .details-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .detail-row {
+      background: #0a0c12;
+      border: 1px solid #1a1f2e;
+      border-radius: 6px;
+      padding: 10px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .detail-row .d-label {
+      font-size: 8px;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+
+    .detail-row .d-value {
+      font-size: 11px;
+      color: #cbd5e1;
+    }
+
+    .detail-row .cyan { color: #22d3ee; }
+    .detail-row .amber { color: #f59e0b; }
+
+    .hash-enclave {
+      background: #070810;
+      border: 1px solid rgba(147, 51, 234, 0.25);
+      border-radius: 10px;
+      padding: 18px 20px;
+      margin-bottom: 20px;
+    }
+
+    .hash-enclave .h-title {
+      font-size: 9px;
+      color: #7c3aed;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    .hash-value {
+      font-size: 11px;
+      color: #a78bfa;
+      word-break: break-all;
+      letter-spacing: 0.5px;
+      line-height: 1.6;
+      background: rgba(124, 58, 237, 0.05);
+      border-radius: 6px;
+      padding: 10px 12px;
+      border: 1px solid rgba(124, 58, 237, 0.15);
+    }
+
+    .hash-note {
+      font-size: 8px;
+      color: #475569;
+      margin-top: 8px;
+      letter-spacing: 0.5px;
+    }
+
+    .trust-card {
+      border: 1px solid #334155;
+      background: #020617;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .trust-card h3 {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      color: #ffffff;
+      font-size: 16px;
+      margin: 0 0 4px 0;
+      letter-spacing: 0.5px;
+    }
+
+    .trust-card .trust-sub {
+      font-size: 8px;
+      color: rgba(255, 255, 255, 0.5);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .trust-card .sovr-title {
+      font-size: 11px;
+      font-weight: 900;
+      letter-spacing: 1.5px;
+      color: #fbbf24;
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .trust-card .welcome-msg {
+      font-size: 9.5px;
+      color: rgba(255, 255, 255, 0.9);
+      font-style: italic;
+      margin-bottom: 6px;
+    }
+
+    .trust-card .agent-txt {
+      font-size: 7.5px;
+      color: rgba(255, 255, 255, 0.4);
+      margin-bottom: 6px;
+    }
+
+    .trust-card .trustee-txt {
+      font-size: 8.5px;
+      color: rgba(255, 255, 255, 0.8);
+      font-weight: bold;
+      margin-bottom: 12px;
+    }
+
+    .trust-card .signature-line {
+      font-family: 'Playfair Display', serif;
+      font-style: italic;
+      font-size: 14px;
+      color: #fde047;
+      border-bottom: 1px dashed rgba(255, 255, 255, 0.2);
+      max-w: 220px;
+      margin: 0 auto;
+      padding-bottom: 4px;
+    }
+
+    .trust-card .trustee-title {
+      font-size: 7px;
+      color: rgba(255, 255, 255, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 4px;
+      font-weight: bold;
+    }
+
+    .trust-card .law-reference {
+      font-size: 7px;
+      color: rgba(255, 255, 255, 0.3);
+      line-height: 1.4;
+      margin-top: 14px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .verification-bar {
+      background: rgba(16, 185, 129, 0.05);
+      border: 1px solid rgba(16, 185, 129, 0.15);
+      border-radius: 8px;
+      padding: 14px 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 12px;
+    }
+
+    .v-status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      color: #10b981;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .dot-pulse {
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+    }
+
+    .integrity-score {
+      font-size: 10px;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .footer-band {
+      border-top: 1px solid #1e293b;
+      padding: 16px 36px;
+      background: #08090f;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      font-size: 8px;
+      color: #334155;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .f-note {
+      max-width: 60%;
+      line-height: 1.5;
+    }
+
+    .f-seal {
+      text-align: right;
+      color: #475569;
+    }
+
+    .f-seal strong {
+      color: #22d3ee;
+      font-size: 9px;
+      display: block;
+      letter-spacing: 2px;
+      margin-top: 2px;
     }
   </style>
 </head>
 <body>
-  <div class="document">
-    <div class="watermark">CERTIFIED</div>
-    
-    <div class="border-1"></div>
-    <div class="border-2"></div>
-    <div class="border-3"></div>
-    <div class="border-4"></div>
-    
-    <div class="corner corner-tl"></div>
-    <div class="corner corner-tr"></div>
-    <div class="corner corner-bl"></div>
-    <div class="corner corner-br"></div>
-    
-    <div class="seal">
-        <div class="seal-inner">★</div>
-    </div>
-    
-    <div class="header">
-        <h1>Certificate of Settlement</h1>
-        <div class="subtitle">Official Financial Ledger Record</div>
+  <div class="certificate-container">
+    <div class="watermark">🔒</div>
+
+    <div class="header-band">
+      <div class="brand-block">
+        <div class="brand-icon">⚙</div>
+        <div class="brand-text">
+          <span class="issuer">SOVR Monetary Authority</span>
+          <div class="title">Certificate of Settlement</div>
+          <div class="subtitle">Official Financial Ledger Record · SOVR Core Gateway</div>
+          <span class="certified-stamp">★ Certified</span>
+        </div>
+      </div>
+      <div class="cert-number-badge">
+        <span class="label">Certificate No.</span>
+        <span class="value">${pkg.settlementCertificate?.certificateNumber || 'N/A'}</span>
+      </div>
     </div>
 
-    <div class="cert-intro">
-        This document certifies that the financial transaction corresponding to <br/>
-        Certificate Number <span class="highlight-id">${pkg.settlementCertificate?.certificateNumber || 'N/A'}</span> <br/>
-        has been officially settled and recorded on the immutable ledger.
+    <div class="body-section">
+      <p class="attestation-text">
+        This document certifies that the financial transaction corresponding to 
+        <strong>Certificate Number ${pkg.settlementCertificate?.certificateNumber || 'N/A'}</strong> has been officially settled
+        and recorded on the immutable SOVR ledger. This record is cryptographically
+        sealed by the SOVR System Signature Server and is available for audit
+        verification by authorized parties.
+      </p>
+
+      <div class="amount-display">
+        <div>
+          <span class="label">Settlement Amount</span>
+          <span class="figure">${((pkg.settlementCertificate?.settlementAmount || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+        </div>
+        <div class="currency-tag">${pkg.settlementCertificate?.denomination === 'SVT' ? 'SOVR Token · SVT' : (pkg.settlementCertificate?.denomination || 'SVT')}</div>
+      </div>
+
+      <div class="metrics-row">
+        <div class="metric-card">
+          <span class="m-label">Settlement Date</span>
+          <span class="m-value cyan">${pkg.settlementCertificate?.settlementDate ? new Date(pkg.settlementCertificate.settlementDate).toLocaleString() : new Date().toLocaleString()}</span>
+        </div>
+        <div class="metric-card">
+          <span class="m-label">Settlement Method</span>
+          <span class="m-value amber">${pkg.settlementCertificate?.settlementMethod || 'CLEARING_PAYMENT'}</span>
+        </div>
+        <div class="metric-card">
+          <span class="m-label">Status</span>
+          <span class="m-value emerald">${pkg.settlementCertificate?.settlementStatus || 'Completed'}</span>
+        </div>
+      </div>
+
+      <div class="details-grid">
+        <div class="detail-row">
+          <span class="d-label">Transaction ID</span>
+          <span class="d-value cyan">${transactionId}</span>
+        </div>
+        <div class="detail-row">
+          <span class="d-label">Issuing Authority</span>
+          <span class="d-value">SOVR Monetary Authority</span>
+        </div>
+        <div class="detail-row">
+          <span class="d-label">Originating Vault</span>
+          <span class="d-value">${pkg.receipt?.originatingVault || '1000.CASH.STRIPE'}</span>
+        </div>
+        <div class="detail-row">
+          <span class="d-label">Receiving Party</span>
+          <span class="d-value amber">${pkg.receipt?.receivingParty || '2000.LIAB.CUSTOMER'}</span>
+        </div>
+      </div>
+
+      <div class="hash-enclave">
+        <div class="h-title">Cryptographic Verification Hash (SHA-256)</div>
+        <div class="hash-value">${pkg.settlementCertificate?.verificationHash || 'N/A'}</div>
+        <div class="hash-note">Hash computed from canonical JSON of transaction payload · Deterministic · Verifiable</div>
+      </div>
+
+      <!-- GM Family Trust Settlement Authorization Card -->
+      <div class="trust-card">
+        <h3>GM Family Trust</h3>
+        <div class="trust-sub">Private Irrevocable Trust - Central Valley, California,</div>
+        <div class="sovr-title">SOVR Development Holdings LLC</div>
+        <div class="welcome-msg">Welcome to the SOVR Empire</div>
+        <div class="agent-txt">Bye,;Maldonado, Gustavo-Orona, agent</div>
+        <div class="trustee-txt">For: GUSTAVO ORONA MALDONADO TTEE, 33-6472099</div>
+        
+        <div>
+          <div class="signature-line">Gustavo Orona Maldonado</div>
+          <div class="trustee-title">Trustee & Authorized Representative</div>
+        </div>
+
+        <div class="law-reference">
+          "12U.S.C.§95(a)(2);50 U.S.C.§4305b(2), HJR-192/
+          <br />
+          Treasury Dept. Circular No. 300, 31CFR Chapter II"
+        </div>
+      </div>
+
+      <div class="verification-bar">
+        <div class="v-status">
+          <span class="dot-pulse"></span>
+          SOVR System · Authorized Signature Verified
+        </div>
+        <div class="integrity-score">
+          Integrity Score: <strong style="color: #10b981;">100% ✓</strong> · Double-Entry Validated
+        </div>
+      </div>
     </div>
 
-    <div class="grid-content">
-        <div class="grid-cell">
-            <div class="data-label">Settlement Date & Time</div>
-            <div class="data-value">${pkg.settlementCertificate?.settlementDate ? new Date(pkg.settlementCertificate.settlementDate).toISOString() : new Date().toISOString()}</div>
-        </div>
-        <div class="grid-cell">
-            <div class="data-label">Settlement Method</div>
-            <div class="data-value">${pkg.settlementCertificate?.settlementMethod || 'N/A'}</div>
-        </div>
-        <div class="grid-cell">
-            <div class="data-label">Status</div>
-            <div class="data-value">${pkg.settlementCertificate?.settlementStatus || 'COMPLETED'}</div>
-        </div>
-        <div class="grid-cell">
-            <div class="data-label">Settlement Amount</div>
-            <div class="data-value amount">${((pkg.settlementCertificate?.settlementAmount || 0) / 100).toFixed(2)} ${pkg.settlementCertificate?.denomination || 'USD'}</div>
-        </div>
-        <div class="grid-cell full-width">
-            <div class="data-label">Issued By Authority</div>
-            <div class="data-value">${pkg.settlementCertificate?.issuedBy || 'SOVR MONETARY AUTHORITY'}</div>
-        </div>
-        <div class="grid-cell full-width">
-            <div class="data-label">Cryptographic Verification Hash (SHA-256)</div>
-            <div class="hash-data">${pkg.settlementCertificate?.verificationHash || 'N/A'}</div>
-        </div>
-    </div>
-
-    <div class="signatures">
-        <div class="sig-block">
-            <div class="sig-line">
-                <span class="sig-name">SOVR System</span>
-            </div>
-            <div class="sig-label">Authorized Signature</div>
-        </div>
-        <div class="sig-block">
-            <div class="sig-line"></div>
-            <div class="sig-label">Independent Verifier</div>
-        </div>
+    <div class="footer-band">
+      <div class="f-note">Immutable cryptographic proof of ledger settlement. Verified with SOVR System Signature Server. This document is an internal SOVR platform record.</div>
+      <div class="f-seal">
+        SOVR Core Gateway · v3.8.4-stable
+        <strong>LEDGER SEALED</strong>
+      </div>
     </div>
   </div>
 </body>

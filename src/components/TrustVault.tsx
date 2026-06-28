@@ -179,15 +179,11 @@ export default function TrustVault({ transactions, setSelectedTxIdForDrilldown, 
   // Helper download trigger
   const triggerDownload = (format: string) => {
     if (!selectedTx) return;
-    const blob = new Blob([JSON.stringify({ transaction: selectedTx, details: txDetails }, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = `SOVR_TRUST_VAULT_${selectedTx.id}.${format}`;
+    a.href = `/api/evidence/download/${selectedTx.id}?format=${format === 'txt' ? 'zip' : format}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    URL.revokeObjectURL(url);
   };
 
   return (
@@ -715,53 +711,147 @@ export default function TrustVault({ transactions, setSelectedTxIdForDrilldown, 
 
                         {/* TAB D: CERTIFICATE */}
                         {activeTxTab === 'Certificate' && (
-                          <div className="space-y-3 animate-fadeIn">
-                            <span className="text-[9px] text-white/40 uppercase block font-bold border-b border-[#2a2a35]/40 pb-1">Settlement Clearing Certificate</span>
-                            <div className="bg-[#050508] p-3 border border-[#1c1c28] rounded font-mono space-y-1.5">
-                              <div className="flex justify-between"><span className="text-white/40">Certificate ID:</span><span className="text-white font-bold">SC-{txDetails?.settlementCertificate?.certificateNumber || '8220'}</span></div>
-                              <div className="flex justify-between"><span className="text-white/40">Liquidity Method:</span><span className="text-yellow-400 font-bold">{txDetails?.settlementCertificate?.settlementMethod || 'VALUE_TRANSFER'}</span></div>
-                              <div className="flex justify-between"><span className="text-white/40">Clearing Latency:</span><span className="text-emerald-400 font-mono">14ms (nominal)</span></div>
-                              <div className="flex justify-between"><span className="text-white/40">Verification Hash:</span><span className="text-white break-all max-w-[200px] text-right text-[9px]">{txDetails?.settlementCertificate?.verificationHash || '0x7e8...'}</span></div>
-                              <div className="flex justify-between"><span className="text-white/40">Signature Status:</span><span className="text-emerald-400 font-bold">CO-SIGNED BY RESERVE NOTARIES</span></div>
+                          <div className="space-y-4 animate-fadeIn max-h-[600px] overflow-y-auto pr-1">
+                            <div className="flex items-center justify-between border-b border-[#2a2a35]/40 pb-2">
+                              <span className="text-[9px] text-white/40 uppercase font-bold">Settlement Clearing Certificate</span>
+                              <span className="text-[8px] bg-[#10b981]/10 text-[#10b981] border border-[#10b981]/20 px-1.5 py-0.5 rounded uppercase font-bold tracking-wider">🔒 Cryptographically Sealed</span>
                             </div>
 
-                            {/* GM Family Trust Settlement Authorization Card */}
-                            <div className="border border-amber-500/20 bg-amber-500/5 rounded p-3 text-center space-y-1.5 max-w-md mx-auto text-[10px]">
-                              <div className="font-serif italic text-white text-[13px] font-bold tracking-wide">
-                                GM Family Trust
-                              </div>
-                              <div className="text-[8px] text-white/50 uppercase tracking-widest font-bold">
-                                Private Irrevocable Trust - Central Valley, California,
-                              </div>
-                              <div className="text-[10px] font-black tracking-wider text-amber-400 font-mono uppercase">
-                                SOVR Development Holdings LLC
-                              </div>
-                              <div className="text-[9px] text-white/90 italic font-medium">
-                                Welcome to the SOVR Empire
-                              </div>
-                              <div className="text-[7.5px] text-white/40 font-mono">
-                                Bye,;Maldonado, Gustavo-Orona, agent
-                              </div>
-                              <div className="text-[8px] text-white/80 font-mono font-bold">
-                                For: GUSTAVO ORONA MALDONADO TTEE, 33-6472099
-                              </div>
-                              
-                              <div className="py-0.5">
-                                <div className="font-serif italic text-amber-200 text-[14px] border-b border-dashed border-white/15 pb-0.5 max-w-[200px] mx-auto select-none">
-                                  Gustavo Orona Maldonado
+                            <div className="relative bg-[#0b0c10] border border-[#1f293d] rounded-lg overflow-hidden font-mono text-[11px] leading-relaxed shadow-2xl">
+                              {/* Cyan Subtle Watermark */}
+                              <div className="absolute top-4 right-4 text-[70px] text-cyan-500/5 select-none pointer-events-none font-bold z-0">🔒</div>
+
+                              {/* Certificate Header Band */}
+                              <div className="bg-gradient-to-r from-[#0a1120] to-[#0c1f38] border-b border-[#1b3152] p-4 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 bg-cyan-400/10 border border-cyan-400/30 rounded-lg flex items-center justify-center text-lg">⚙</div>
+                                  <div>
+                                    <span className="text-[8px] text-white/40 uppercase tracking-widest block">SOVR Monetary Authority</span>
+                                    <span className="text-sm font-bold text-cyan-400 uppercase tracking-wide">Certificate of Settlement</span>
+                                    <span className="text-[8px] text-white/50 block mt-0.5">Core Gateway · Official Ledger Record</span>
+                                  </div>
                                 </div>
-                                <div className="text-[7px] text-white/40 uppercase tracking-wider mt-0.5 font-bold">
-                                  Trustee & Authorized Representative
+                                <div className="bg-cyan-500/5 border border-cyan-500/20 rounded px-2.5 py-1.5 text-right">
+                                  <span className="text-[7px] text-white/40 uppercase block">Certificate No.</span>
+                                  <span className="text-xs font-bold text-cyan-400">SC-{txDetails?.settlementCertificate?.certificateNumber || '8220'}</span>
                                 </div>
                               </div>
 
-                              <div className="text-[7px] text-white/30 font-mono leading-relaxed bg-black/40 p-1.5 rounded border border-white/5">
-                                "12U.S.C.§95(a)(2);50 U.S.C.§4305b(2), HJR-192/
-                                <br />
-                                UCC § 3-603/ UCC 10-104/ UCC 1-104"
-                              </div>
-                              <div className="text-[7.5px] text-white/50 font-bold uppercase tracking-widest">
-                                Without Recourse, All Rights Reserved
+                              <div className="p-4 space-y-4">
+                                <p className="text-[10px] text-white/60 leading-relaxed border-l-2 border-cyan-500/20 pl-3">
+                                  This document certifies that the financial transaction corresponding to <strong className="text-white">Certificate No. SC-{txDetails?.settlementCertificate?.certificateNumber || '8220'}</strong> has been officially settled and recorded on the immutable ledger.
+                                </p>
+
+                                {/* Amount Display */}
+                                <div className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/20 rounded-lg p-4 flex items-center justify-between">
+                                  <div>
+                                    <span className="text-[8px] text-white/40 uppercase tracking-widest block mb-1">Settlement Amount</span>
+                                    <span className="text-2xl font-bold text-emerald-400 tracking-wide">
+                                      {txDetails?.settlementCertificate?.settlementAmount 
+                                        ? ((txDetails.settlementCertificate.settlementAmount) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                                        : '0.00'
+                                      }
+                                    </span>
+                                  </div>
+                                  <span className="bg-emerald-500/10 border border-emerald-500/20 rounded px-2 py-1 text-[9px] text-emerald-400 font-bold uppercase tracking-wider">
+                                    {txDetails?.settlementCertificate?.denomination || 'USD'}
+                                  </span>
+                                </div>
+
+                                {/* Detail grid */}
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div className="bg-black/40 border border-white/5 rounded p-2.5">
+                                    <span className="text-[7px] text-white/40 uppercase block mb-1">Settlement Date</span>
+                                    <span className="text-cyan-400 text-[10px] block font-bold">
+                                      {txDetails?.settlementCertificate?.settlementDate 
+                                        ? new Date(txDetails.settlementCertificate.settlementDate).toLocaleString() 
+                                        : new Date().toLocaleString()
+                                      }
+                                    </span>
+                                  </div>
+                                  <div className="bg-black/40 border border-white/5 rounded p-2.5">
+                                    <span className="text-[7px] text-white/40 uppercase block mb-1">Settlement Method</span>
+                                    <span className="text-amber-400 text-[10px] block font-bold">
+                                      {txDetails?.settlementCertificate?.settlementMethod || 'CLEARING_PAYMENT'}
+                                    </span>
+                                  </div>
+                                  <div className="bg-black/40 border border-white/5 rounded p-2.5 col-span-2">
+                                    <span className="text-[7px] text-white/40 uppercase block mb-1">Transaction ID</span>
+                                    <span className="text-white text-[9px] block font-mono break-all font-bold">
+                                      {selectedTx?.id}
+                                    </span>
+                                  </div>
+                                  <div className="bg-black/40 border border-white/5 rounded p-2.5">
+                                    <span className="text-[7px] text-white/40 uppercase block mb-1">Originating Vault</span>
+                                    <span className="text-white text-[9px] block">
+                                      {txDetails?.receipt?.originatingVault || '1000.CASH.STRIPE'}
+                                    </span>
+                                  </div>
+                                  <div className="bg-black/40 border border-white/5 rounded p-2.5">
+                                    <span className="text-[7px] text-white/40 uppercase block mb-1">Receiving Party</span>
+                                    <span className="text-amber-400 text-[9px] block">
+                                      {txDetails?.receipt?.receivingParty || '2000.LIAB.CUSTOMER'}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Cryptographic Signature */}
+                                <div className="bg-purple-500/5 border border-purple-500/20 rounded-lg p-3">
+                                  <span className="text-[8px] text-purple-400 uppercase tracking-widest block mb-1">Cryptographic Verification Hash</span>
+                                  <span className="text-purple-300 font-mono text-[9px] block break-all bg-purple-500/5 border border-purple-500/10 p-2 rounded">
+                                    {txDetails?.settlementCertificate?.verificationHash || 'N/A'}
+                                  </span>
+                                </div>
+
+                                {/* GM Family Trust Settlement Authorization Card */}
+                                <div className="border border-amber-500/25 bg-amber-500/5 rounded-lg p-4 text-center space-y-2">
+                                  <div className="font-serif italic text-white text-[13px] font-bold tracking-wide">
+                                    GM Family Trust
+                                  </div>
+                                  <div className="text-[8px] text-white/50 uppercase tracking-widest font-bold">
+                                    Private Irrevocable Trust - Central Valley, California,
+                                  </div>
+                                  <div className="text-[10px] font-black tracking-wider text-amber-400 font-mono uppercase">
+                                    SOVR Development Holdings LLC
+                                  </div>
+                                  <div className="text-[9.5px] text-white/90 italic font-medium">
+                                    Welcome to the SOVR Empire
+                                  </div>
+                                  <div className="text-[7.5px] text-white/40 font-mono">
+                                    Bye,;Maldonado, Gustavo-Orona, agent
+                                  </div>
+                                  <div className="text-[8.5px] text-white/80 font-mono font-bold">
+                                    For: GUSTAVO ORONA MALDONADO TTEE, 33-6472099
+                                  </div>
+                                  
+                                  <div className="py-1">
+                                    <div className="font-serif italic text-amber-200 text-sm border-b border-dashed border-white/15 pb-0.5 max-w-[200px] mx-auto select-none">
+                                      Gustavo Orona Maldonado
+                                    </div>
+                                    <div className="text-[7px] text-white/40 uppercase tracking-wider mt-0.5 font-bold">
+                                      Trustee & Authorized Representative
+                                    </div>
+                                  </div>
+
+                                  <div className="text-[7px] text-white/30 font-mono leading-relaxed bg-black/40 p-2 rounded border border-white/5">
+                                    "12U.S.C.§95(a)(2);50 U.S.C.§4305b(2), HJR-192/
+                                    <br />
+                                    Treasury Dept. Circular No. 300, 31CFR Chapter II"
+                                  </div>
+                                  <div className="text-[7.5px] text-white/50 font-bold uppercase tracking-widest">
+                                    Without Recourse, All Rights Reserved
+                                  </div>
+                                </div>
+
+                                {/* Verification bar */}
+                                <div className="bg-emerald-500/5 border border-emerald-500/15 rounded-lg p-3 flex items-center justify-between text-[9px]">
+                                  <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                                    SOVR Signature Verified
+                                  </div>
+                                  <div className="text-white/45">Integrity: <span className="text-emerald-400 font-bold">100% ✓</span></div>
+                                </div>
+
                               </div>
                             </div>
                           </div>
@@ -1158,11 +1248,10 @@ export default function TrustVault({ transactions, setSelectedTxIdForDrilldown, 
                 <div className="md:col-span-4 flex flex-col gap-1.5">
                   <button
                     onClick={() => {
-                      const blob = new Blob([JSON.stringify(generatedPackage, null, 2)], { type: 'application/json' });
-                      const url = URL.createObjectURL(blob);
+                      const txnId = selectedTx?.id || filteredTransactions[0]?.id;
+                      if (!txnId) return;
                       const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `SOVR_AUDIT_PACKAGE_${generatedPackage.id}.zip`;
+                      a.href = `/api/evidence/download/${txnId}?format=zip`;
                       document.body.appendChild(a);
                       a.click();
                       document.body.removeChild(a);

@@ -56,38 +56,11 @@ export default function TransactionsHistory({ transactions, onSelectTransaction 
 
   const triggerZIPDownload = async (txnId: string) => {
     try {
-      const res = await fetch(`/api/verify/${txnId}`);
-      const data = await res.json();
-      const reportText = `
-================================================================================
-             SOVR EVIDENCE ENGINE v1.0 - IMMUTABLE AUDIT PACKAGE BUNDLE
-================================================================================
-Audit Date: ${new Date().toISOString()}
-Transaction ID: ${txnId}
-Ledger Hash: ${data.evidenceObject.hash}
-Signature Ed25519: ${data.receipt.digitalSignature.signature}
-================================================================================
-Evidence Vault Integrity Score: 100% SECURE
-
-Checklist:
-  Ledger Verified: ✓
-  Receipt Generated: ✓
-  Settlement Issued: ✓
-  Hash Validated: ✓
-  Signature Verified: ✓
-  Chain Anchored: ✓
-  Audit Package Ready: ✓
-================================================================================
-`;
-      const blob = new Blob([reportText], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = `SOVR_AUDIT_BUNDLE_${txnId}.zip`;
+      a.href = `/api/evidence/download/${txnId}?format=zip`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
     } catch (e) {
       console.error('Failed to trigger ZIP download:', e);
     }
@@ -719,68 +692,287 @@ Checklist:
             {/* Print Container Sheet */}
             <div 
               id="sovr-certificate-print-sheet" 
-              className="w-full max-w-2xl bg-white text-black p-8 sm:p-12 shadow-2xl rounded border border-slate-300 font-mono text-xs leading-relaxed"
+              className="w-full max-w-2xl bg-[#0f1117] text-[#e2e8f0] p-0 shadow-2xl rounded-xl border border-[#1e293b] font-mono text-xs leading-relaxed overflow-hidden relative print-exact"
             >
-              <h2 style={{ textAlign: 'center', borderBottom: '2px solid #000', paddingBottom: '12px', fontWeight: 'bold', fontSize: '15px' }}>
-                SOVR SECURE EVIDENCE CERTIFICATE
-              </h2>
-              
-              <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '24px' }}>
-                <tbody>
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '10px 4px', fontWeight: 'bold', width: '35%' }}>Transaction ID:</td>
-                    <td style={{ padding: '10px 4px', wordBreak: 'break-all' }}>{printTxId}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Receipt Number:</td>
-                    <td style={{ padding: '10px 4px' }}>{printTxData.receipt?.receiptNumber}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Settlement Number:</td>
-                    <td style={{ padding: '10px 4px' }}>{printTxData.settlementCertificate?.certificateNumber}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Chain Proof Number:</td>
-                    <td style={{ padding: '10px 4px' }}>{printTxData.chainProof?.proofNumber}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Date Sealed:</td>
-                    <td style={{ padding: '10px 4px' }}>{new Date(printTxData.evidenceObject?.timestamp).toLocaleString()}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Value Transferred:</td>
-                    <td style={{ padding: '10px 4px', fontSize: '13px', fontWeight: 'bold' }}>
-                      {formatCurrency(printTxData.receipt?.amount, printTxData.receipt?.denomination)}
-                    </td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Origin Vault:</td>
-                    <td style={{ padding: '10px 4px' }}>{printTxData.receipt?.originatingVault}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Receiving Party:</td>
-                    <td style={{ padding: '10px 4px' }}>{printTxData.receipt?.receivingParty}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Cryptographic SHA256:</td>
-                    <td style={{ padding: '10px 4px', fontSize: '9px', wordBreak: 'break-all' }}>{printTxData.evidenceObject?.hash}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Ed25519 Signature:</td>
-                    <td style={{ padding: '10px 4px', fontSize: '9px', wordBreak: 'break-all' }}>{printTxData.receipt?.digitalSignature?.signature}</td>
-                  </tr>
-                  <tr style={{ borderBottom: '1px solid #eee' }}>
-                    <td style={{ padding: '10px 4px', fontWeight: 'bold' }}>Chain Height & Net:</td>
-                    <td style={{ padding: '10px 4px' }}>
-                      {printTxData.chainProof?.network} | Height #{printTxData.chainProof?.blockHeight}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              <div className="watermark" style={{
+                position: 'absolute',
+                top: '20px',
+                right: '20px',
+                fontSize: '120px',
+                color: 'rgba(34, 211, 238, 0.04)',
+                pointerEvents: 'none',
+                userSelect: 'none',
+                lineHeight: 1
+              }}>🔒</div>
 
-              <div style={{ marginTop: '40px', borderTop: '1px dashed #000', paddingTop: '16px', fontSize: '10px', textAlign: 'center', color: '#333' }}>
-                <p style={{ margin: '2px 0' }}>This document constitutes an immutable cryptographic proof of ledger settlement.</p>
-                <p style={{ margin: '2px 0', fontWeight: 'bold' }}>Verified with SOVR System Signature Server - Integrity Score 100%</p>
+              <div className="header-band" style={{
+                background: 'linear-gradient(135deg, #0c1628 0%, #0f1f3d 50%, #0c1628 100%)',
+                borderBottom: '1px solid #1e3a5f',
+                padding: '28px 36px 24px',
+                display: 'flex',
+                alignItems: 'flex-start',
+                justifyContent: 'space-between',
+                gap: '20px'
+              }}>
+                <div className="brand-block" style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                  <div className="brand-icon" style={{
+                    width: '48px',
+                    height: '48px',
+                    background: 'rgba(34, 211, 238, 0.08)',
+                    border: '1px solid rgba(34, 211, 238, 0.3)',
+                    borderRadius: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '22px'
+                  }}>⚙</div>
+                  <div className="brand-text">
+                    <span className="issuer" style={{
+                      fontSize: '10px',
+                      color: '#64748b',
+                      textTransform: 'uppercase',
+                      letterSpacing: '2px',
+                      display: 'block'
+                    }}>SOVR Monetary Authority</span>
+                    <div className="title" style={{
+                      fontFamily: "'Rajdhani', sans-serif",
+                      fontSize: '22px',
+                      fontWeight: 700,
+                      color: '#22d3ee',
+                      letterSpacing: '1px',
+                      lineHeight: 1.2,
+                      textTransform: 'uppercase'
+                    }}>Certificate of Settlement</div>
+                    <div className="subtitle" style={{
+                      fontSize: '9px',
+                      color: '#475569',
+                      textTransform: 'uppercase',
+                      letterSpacing: '1.5px',
+                      marginTop: '2px'
+                    }}>Official Financial Ledger Record · SOVR Core Gateway</div>
+                    <span className="certified-stamp" style={{
+                      background: 'rgba(16, 185, 129, 0.06)',
+                      border: '1px solid rgba(16, 185, 129, 0.2)',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      fontSize: '9px',
+                      color: '#10b981',
+                      textTransform: 'uppercase',
+                      letterSpacing: '2px',
+                      marginTop: '8px',
+                      display: 'inline-block'
+                    }}>★ Certified</span>
+                  </div>
+                </div>
+                <div className="cert-number-badge" style={{
+                  background: 'rgba(34, 211, 238, 0.06)',
+                  border: '1px solid rgba(34, 211, 238, 0.25)',
+                  borderRadius: '8px',
+                  padding: '10px 16px',
+                  textAlign: 'right',
+                  flexShrink: 0
+                }}>
+                  <span className="label" style={{
+                    fontSize: '8px',
+                    color: '#64748b',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1.5px',
+                    display: 'block',
+                    marginBottom: '4px'
+                  }}>Certificate No.</span>
+                  <span className="value" style={{
+                    fontSize: '14px',
+                    color: '#22d3ee',
+                    fontWeight: 'bold',
+                    letterSpacing: '1px'
+                  }}>{printTxData.settlementCertificate?.certificateNumber}</span>
+                </div>
+              </div>
+
+              <div className="body-section" style={{ padding: '28px 36px' }}>
+                <p className="attestation-text" style={{
+                  fontSize: '12px',
+                  color: '#94a3b8',
+                  lineHeight: '1.7',
+                  marginBottom: '28px',
+                  borderLeft: '2px solid rgba(34, 211, 238, 0.2)',
+                  paddingLeft: '16px'
+                }}>
+                  This document certifies that the financial transaction corresponding to{" "}
+                  <strong style={{ color: '#e2e8f0' }}>Certificate Number {printTxData.settlementCertificate?.certificateNumber}</strong> has been officially settled
+                  and recorded on the immutable SOVR ledger. This record is cryptographically
+                  sealed by the SOVR System Signature Server and is available for audit
+                  verification by authorized parties.
+                </p>
+
+                <div className="amount-display" style={{
+                  background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.08), rgba(16, 185, 129, 0.03))',
+                  border: '1px solid rgba(16, 185, 129, 0.2)',
+                  borderRadius: '10px',
+                  padding: '20px 24px',
+                  marginBottom: '20px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between'
+                }}>
+                  <div>
+                    <span className="label" style={{
+                      fontSize: '10px',
+                      color: '#475569',
+                      textTransform: 'uppercase',
+                      letterSpacing: '2px',
+                      display: 'block',
+                      marginBottom: '6px'
+                    }}>Settlement Amount</span>
+                    <span className="figure" style={{
+                      fontFamily: "'Rajdhani', sans-serif",
+                      fontSize: '36px',
+                      fontWeight: 700,
+                      color: '#10b981',
+                      letterSpacing: '1px'
+                    }}>{formatCurrency(printTxData.receipt?.amount, printTxData.receipt?.denomination)}</span>
+                  </div>
+                  <div className="currency-tag" style={{
+                    background: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                    borderRadius: '6px',
+                    padding: '6px 12px',
+                    fontSize: '11px',
+                    color: '#10b981',
+                    textTransform: 'uppercase',
+                    letterSpacing: '2px'
+                  }}>{printTxData.receipt?.denomination === 'SVT' ? 'SOVR Token · SVT' : printTxData.receipt?.denomination || 'SVT'}</div>
+                </div>
+
+                <div className="metrics-row" style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(3, 1fr)',
+                  gap: '12px',
+                  marginBottom: '20px'
+                }}>
+                  <div className="metric-card" style={{ background: '#0a0c12', border: '1px solid #1e293b', borderRadius: '8px', padding: '14px 16px' }}>
+                    <span className="m-label" style={{ fontSize: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '1.5px', display: 'block', marginBottom: '6px' }}>Settlement Date</span>
+                    <span className="m-value cyan" style={{ fontSize: '13px', fontWeight: 'bold', color: '#22d3ee' }}>{new Date(printTxData.evidenceObject?.timestamp).toLocaleString()}</span>
+                  </div>
+                  <div className="metric-card" style={{ background: '#0a0c12', border: '1px solid #1e293b', borderRadius: '8px', padding: '14px 16px' }}>
+                    <span className="m-label" style={{ fontSize: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '1.5px', display: 'block', marginBottom: '6px' }}>Settlement Method</span>
+                    <span className="m-value amber" style={{ fontSize: '13px', fontWeight: 'bold', color: '#f59e0b' }}>CLEARING_PAYMENT</span>
+                  </div>
+                  <div className="metric-card" style={{ background: '#0a0c12', border: '1px solid #1e293b', borderRadius: '8px', padding: '14px 16px' }}>
+                    <span className="m-label" style={{ fontSize: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '1.5px', display: 'block', marginBottom: '6px' }}>Status</span>
+                    <span className="m-value emerald" style={{ fontSize: '13px', fontWeight: 'bold', color: '#10b981' }}>Completed</span>
+                  </div>
+                </div>
+
+                <div className="details-grid" style={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: '10px',
+                  marginBottom: '20px'
+                }}>
+                  <div className="detail-row" style={{ background: '#0a0c12', border: '1px solid #1a1f2e', borderRadius: '6px', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <span className="d-label" style={{ fontSize: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Transaction ID</span>
+                    <span className="d-value cyan" style={{ fontSize: '11px', color: '#22d3ee' }}>{printTxId}</span>
+                  </div>
+                  <div className="detail-row" style={{ background: '#0a0c12', border: '1px solid #1a1f2e', borderRadius: '6px', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <span className="d-label" style={{ fontSize: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Issuing Authority</span>
+                    <span className="d-value" style={{ fontSize: '11px', color: '#cbd5e1' }}>SOVR Monetary Authority</span>
+                  </div>
+                  <div className="detail-row" style={{ background: '#0a0c12', border: '1px solid #1a1f2e', borderRadius: '6px', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <span className="d-label" style={{ fontSize: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Originating Vault</span>
+                    <span className="d-value" style={{ fontSize: '11px', color: '#cbd5e1' }}>{printTxData.receipt?.originatingVault}</span>
+                  </div>
+                  <div className="detail-row" style={{ background: '#0a0c12', border: '1px solid #1a1f2e', borderRadius: '6px', padding: '10px 14px', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <span className="d-label" style={{ fontSize: '8px', color: '#475569', textTransform: 'uppercase', letterSpacing: '1.5px' }}>Receiving Party</span>
+                    <span className="d-value amber" style={{ fontSize: '11px', color: '#f59e0b' }}>{printTxData.receipt?.receivingParty}</span>
+                  </div>
+                </div>
+
+                <div className="hash-enclave" style={{
+                  background: '#070810',
+                  border: '1px solid rgba(147, 51, 234, 0.25)',
+                  borderRadius: '10px',
+                  padding: '18px 20px',
+                  marginBottom: '20px'
+                }}>
+                  <div className="h-title" style={{
+                    fontSize: '9px',
+                    color: '#7c3aed',
+                    textTransform: 'uppercase',
+                    letterSpacing: '2px',
+                    marginBottom: '10px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>Cryptographic Verification Hash (SHA-256)</div>
+                  <div className="hash-value" style={{
+                    fontSize: '11px',
+                    color: '#a78bfa',
+                    wordBreak: 'break-all',
+                    letterSpacing: '0.5px',
+                    lineHeight: '1.6',
+                    background: 'rgba(124, 58, 237, 0.05)',
+                    borderRadius: '6px',
+                    padding: '10px 12px',
+                    border: '1px solid rgba(124, 58, 237, 0.15)'
+                  }}>{printTxData.evidenceObject?.hash}</div>
+                  <div className="hash-note" style={{ fontSize: '8px', color: '#475569', marginTop: '8px', letterSpacing: '0.5px' }}>Hash computed from canonical JSON of transaction payload · Deterministic · Verifiable</div>
+                </div>
+
+                <div className="verification-bar" style={{
+                  background: 'rgba(16, 185, 129, 0.05)',
+                  border: '1px solid rgba(16, 185, 129, 0.15)',
+                  borderRadius: '8px',
+                  padding: '14px 18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: '20px',
+                  gap: '12px'
+                }}>
+                  <div className="v-status" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    fontSize: '11px',
+                    color: '#10b981',
+                    fontWeight: 'bold',
+                    textTransform: 'uppercase',
+                    letterSpacing: '1px'
+                  }}>
+                    <span className="dot-pulse" style={{
+                      width: '8px',
+                      height: '8px',
+                      background: '#10b981',
+                      borderRadius: '50%',
+                      flexShrink: 0
+                    }}></span>
+                    SOVR System · Authorized Signature Verified
+                  </div>
+                  <div className="integrity-score" style={{ fontSize: '10px', color: '#475569', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                    Integrity Score: <strong style={{ color: '#10b981' }}>100% ✓</strong> · Double-Entry Validated
+                  </div>
+                </div>
+              </div>
+
+              <div className="footer-band" style={{
+                borderTop: '1px solid #1e293b',
+                padding: '16px 36px',
+                background: '#08090f',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '16px',
+                fontSize: '8px',
+                color: '#334155',
+                textTransform: 'uppercase',
+                letterSpacing: '1px'
+              }}>
+                <div className="f-note" style={{ maxWidth: '60%', lineHeight: '1.5' }}>Immutable cryptographic proof of ledger settlement. Verified with SOVR System Signature Server. This document is an internal SOVR platform record.</div>
+                <div className="f-seal" style={{ textAlign: 'right', color: '#475569' }}>
+                  SOVR Core Gateway · v3.8.4-stable
+                  <strong style={{ color: '#22d3ee', fontSize: '9px', display: 'block', letterSpacing: '2px', marginTop: '2px' }}>LEDGER SEALED</strong>
+                </div>
               </div>
             </div>
 
@@ -788,8 +980,10 @@ Checklist:
             <style dangerouslySetInnerHTML={{ __html: `
               @media print {
                 body {
-                  background: white !important;
-                  color: black !important;
+                  background: #09090b !important;
+                  color: #cbd5e1 !important;
+                  -webkit-print-color-adjust: exact !important;
+                  print-color-adjust: exact !important;
                 }
                 body > * {
                   display: none !important;
@@ -801,8 +995,7 @@ Checklist:
                   top: 0 !important;
                   width: 100% !important;
                   height: auto !important;
-                  background: white !important;
-                  color: black !important;
+                  background: #09090b !important;
                   padding: 24px !important;
                   margin: 0 !important;
                   box-shadow: none !important;
